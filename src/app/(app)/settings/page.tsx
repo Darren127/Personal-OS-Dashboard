@@ -4,6 +4,8 @@ import { Suspense } from "react";
 import { CheckCircle2, CircleDashed } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
+import { PreferencesForm } from "@/components/preferences-form";
+import { Skeleton } from "@/components/skeletons";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -13,6 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getIntegrationStatus } from "@/lib/server/env";
+import { getPreferences } from "@/lib/server/preferences";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -120,13 +123,40 @@ async function IntegrationStatus() {
   );
 }
 
+async function Preferences() {
+  const prefs = await getPreferences();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Preferences</CardTitle>
+        <CardDescription>How Personal OS plans your day.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <PreferencesForm
+          displayName={prefs.displayName}
+          timezone={prefs.timezone}
+          workDayStart={prefs.workDayStart}
+          workDayEnd={prefs.workDayEnd}
+          timezones={Intl.supportedValuesOf("timeZone")}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function SettingsPage() {
   return (
     <>
       <PageHeader
         title="Settings"
-        description="Connection status for the services Personal OS depends on. Values are never shown."
+        description="Your preferences, and the status of the services Personal OS depends on."
       />
+      <div className="mb-6">
+        <Suspense fallback={<Skeleton className="h-64 rounded-xl" />}>
+          <Preferences />
+        </Suspense>
+      </div>
+      <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Connections (values are never shown)</h2>
       <Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-muted" />}>
         <IntegrationStatus />
       </Suspense>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, Menu, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -29,11 +29,23 @@ function Brand() {
 }
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
-  const pathname = usePathname();
+  // Reading the URL must happen inside <Suspense> on dynamic routes.
+  return (
+    <Suspense fallback={<NavLinkList onNavigate={onNavigate} />}>
+      <ActiveNavLinks onNavigate={onNavigate} />
+    </Suspense>
+  );
+}
+
+function ActiveNavLinks({ onNavigate }: { onNavigate?: () => void }) {
+  return <NavLinkList pathname={usePathname()} onNavigate={onNavigate} />;
+}
+
+function NavLinkList({ pathname, onNavigate }: { pathname?: string; onNavigate?: () => void }) {
   return (
     <nav aria-label="Main" className="flex flex-col gap-0.5">
       {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-        const active = isActive(pathname, href);
+        const active = pathname !== undefined && isActive(pathname, href);
         return (
           <Link
             key={href}

@@ -3,6 +3,7 @@ import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { cache } from "react";
 
 import type { Database } from "@/lib/supabase/database.types";
@@ -30,6 +31,8 @@ export class SupabaseNotConfiguredError extends Error {
 export async function createClient() {
   const config = getSupabaseConfig();
   if (!config) throw new SupabaseNotConfiguredError();
+  // Personal data is always rendered at request time, never prerendered.
+  await connection();
   const cookieStore = await cookies();
 
   return createServerClient<Database>(config.url, config.key, {

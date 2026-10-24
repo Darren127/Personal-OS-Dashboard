@@ -100,3 +100,47 @@ export function timeToMinutes(time: string) {
   const [h, m] = time.split(":").map(Number);
   return h * 60 + m;
 }
+
+/** Offset (ms) of `timezone` from UTC at the given instant. */
+function tzOffsetMs(timezone: string, at: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: timezone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(at);
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value);
+  const asUtc = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second"));
+  return asUtc - Math.floor(at.getTime() / 1000) * 1000;
+}
+
+/**
+ * "2026-10-24T09:30" (wall-clock time in `timezone`, as produced by
+ * <input type="datetime-local">) → ISO UTC timestamp.
+ */
+export function zonedLocalToUtcIso(local: string, timezone: string): string {
+  const [date, time = "00:00"] = local.split("T");
+  const [y, mo, d] = date.split("-").map(Number);
+  const [h, mi] = time.split(":").map(Number);
+  const guess = Date.UTC(y, mo - 1, d, h, mi);
+  let utc = guess - tzOffsetMs(timezone, new Date(guess));
+  // Second pass corrects for DST transitions between guess and result.
+  utc = guess - tzOffsetMs(timezone, new Date(utc));
+  return new Date(utc).toISOString();
+}
+
+/** ISO UTC timestamp → "2026-10-24T09:30" wall-clock time in `timezone`. */
+export function utcIsoToZonedLocal(iso: string, timezone: string): string {
+  const at = new Date(iso);
+  const local = new Date(at.getTime() + tzOffsetMs(timezone, at));
+  return local.toISOString().slice(0, 16);
+}
+
+/** "09:30" for an ISO timestamp, in `timezone`. */
+export function formatClockTime(iso: string, timezone: string) {
+  return utcIsoToZonedLocal(iso, timezone).slice(11, 16);
+}
