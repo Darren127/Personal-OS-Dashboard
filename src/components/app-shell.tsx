@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Sparkles } from "lucide-react";
+import { LogOut, Menu, Sparkles } from "lucide-react";
 import { useState } from "react";
 
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -56,11 +56,27 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
+function SignOutButton({ signOut }: { signOut: () => Promise<void> }) {
+  return (
+    <form action={signOut}>
+      <Button variant="ghost" size="icon" type="submit" aria-label="Sign out" title="Sign out">
+        <LogOut />
+      </Button>
+    </form>
+  );
+}
+
 /**
  * Responsive layout: fixed sidebar on desktop (lg and up), top bar with a
  * slide-out menu on smaller screens.
  */
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({
+  children,
+  signOut,
+}: {
+  children: React.ReactNode;
+  signOut: () => Promise<void>;
+}) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -68,9 +84,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col gap-6 border-r bg-sidebar p-4 lg:flex">
         <Brand />
         <NavLinks />
-        <div className="mt-auto flex items-center justify-between px-2 text-xs text-muted-foreground">
-          <span>Theme</span>
+        <div className="mt-auto flex items-center justify-end gap-1 px-1">
           <ThemeToggle />
+          <SignOutButton signOut={signOut} />
         </div>
       </aside>
 
@@ -92,8 +108,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </SheetContent>
           </Sheet>
           <Brand />
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
             <ThemeToggle />
+            <SignOutButton signOut={signOut} />
           </div>
         </header>
 
