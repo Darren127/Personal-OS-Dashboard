@@ -17,9 +17,15 @@ export function getSupabaseConfig() {
 
 export class SupabaseNotConfiguredError extends Error {
   constructor() {
+    // Name exactly which variable is missing, and any similarly named ones
+    // that were set (a typo), without ever printing a value.
+    const missing = ["NEXT_PUBLIC_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"].filter((n) => !process.env[n]);
+    const similar = Object.keys(process.env).filter((n) => /SUPABASE/i.test(n) && !missing.includes(n));
     super(
-      "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY " +
-        "(locally in .env.local; on Vercel in Project Settings → Environment Variables, then redeploy).",
+      `Supabase is not configured. Missing: ${missing.join(", ")}. ` +
+        `Supabase-like variables that are set: ${similar.length ? similar.join(", ") : "none"}. ` +
+        "Set them locally in .env.local; on Vercel in Project Settings → Environment Variables " +
+        "(names must match exactly, Production ticked), then redeploy.",
     );
   }
 }
