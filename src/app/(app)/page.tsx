@@ -14,6 +14,7 @@ import {
   Target,
 } from "lucide-react";
 
+import { EmailIntelligenceCard } from "@/components/email/email-intelligence";
 import { FindingsList } from "@/components/findings-list";
 import { DailyNotes, DailyReview } from "@/components/my-day/day-forms";
 import { DueTodayList, OverdueList, Priorities } from "@/components/my-day/my-day-lists";
@@ -119,6 +120,10 @@ async function MyDayContent() {
             <FindingsList findings={findings.slice(0, 3)} />
           </section>
         )}
+
+        <Suspense fallback={<Skeleton className="h-40 rounded-xl" />}>
+          <EmailIntelligenceCard supabase={supabase} timezone={prefs.timezone} />
+        </Suspense>
 
         <div className="grid gap-6 lg:grid-cols-5">
           <div className="min-w-0 space-y-6 lg:col-span-3">

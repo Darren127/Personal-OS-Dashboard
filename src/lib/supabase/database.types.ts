@@ -137,6 +137,40 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"email_analysis_runs": {
+                  Row: {
+                    "cache_creation_input_tokens": number,"cache_read_input_tokens": number,"created_at": string,"id": string,"input_tokens": number,"kind": string,"message_count": number,"model": string,"output_tokens": number,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "cache_creation_input_tokens"?: number,"cache_read_input_tokens"?: number,"created_at"?: string,"id"?: string,"input_tokens"?: number,"kind": string,"message_count"?: number,"model": string,"output_tokens"?: number,"user_id"?: string
+                  }
+                  Update: {
+                    "cache_creation_input_tokens"?: number,"cache_read_input_tokens"?: number,"created_at"?: string,"id"?: string,"input_tokens"?: number,"kind"?: string,"message_count"?: number,"model"?: string,"output_tokens"?: number,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"email_messages": {
+                  Row: {
+                    "action_required": boolean | null,"analysis": Json | null,"analysis_content_hash": string | null,"analysis_model": string | null,"analyzed_at": string | null,"body_excerpt": string | null,"content_hash": string,"created_at": string,"fetched_at": string,"from_email": string | null,"from_name": string | null,"id": string,"importance": Database["public"]['Enums']["email_importance"] | null,"is_unread": boolean,"label_ids": (string)[],"needs_reply": boolean | null,"provider_message_id": string,"received_at": string,"snippet": string | null,"subject": string | null,"task_id": string | null,"thread_id": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "action_required"?: boolean | null,"analysis"?: Json | null,"analysis_content_hash"?: string | null,"analysis_model"?: string | null,"analyzed_at"?: string | null,"body_excerpt"?: string | null,"content_hash": string,"created_at"?: string,"fetched_at"?: string,"from_email"?: string | null,"from_name"?: string | null,"id"?: string,"importance"?: Database["public"]['Enums']["email_importance"] | null,"is_unread"?: boolean,"label_ids"?: (string)[],"needs_reply"?: boolean | null,"provider_message_id": string,"received_at": string,"snippet"?: string | null,"subject"?: string | null,"task_id"?: string | null,"thread_id": string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Update: {
+                    "action_required"?: boolean | null,"analysis"?: Json | null,"analysis_content_hash"?: string | null,"analysis_model"?: string | null,"analyzed_at"?: string | null,"body_excerpt"?: string | null,"content_hash"?: string,"created_at"?: string,"fetched_at"?: string,"from_email"?: string | null,"from_name"?: string | null,"id"?: string,"importance"?: Database["public"]['Enums']["email_importance"] | null,"is_unread"?: boolean,"label_ids"?: (string)[],"needs_reply"?: boolean | null,"provider_message_id"?: string,"received_at"?: string,"snippet"?: string | null,"subject"?: string | null,"task_id"?: string | null,"thread_id"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "email_messages_task_id_user_id_fkey"
+      columns: ["task_id","user_id"]
+isOneToOne: false
+      referencedRelation: "tasks"
+      referencedColumns: ["id","user_id"]
+    }
+                  ]
                 },"finding_dismissals": {
                   Row: {
                     "created_at": string,"dismissed_until": string,"finding_key": string,"user_id": string
@@ -147,6 +181,20 @@ isOneToOne: false
                   }
                   Update: {
                     "created_at"?: string,"dismissed_until"?: string,"finding_key"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"gmail_connections": {
+                  Row: {
+                    "briefing": string | null,"briefing_at": string | null,"briefing_source_hash": string | null,"connected_at": string,"created_at": string,"google_email": string,"last_sync_at": string | null,"last_sync_error": string | null,"last_sync_error_at": string | null,"refresh_token_enc": string,"scopes": (string)[],"status": Database["public"]['Enums']["gmail_connection_status"],"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "briefing"?: string | null,"briefing_at"?: string | null,"briefing_source_hash"?: string | null,"connected_at"?: string,"created_at"?: string,"google_email": string,"last_sync_at"?: string | null,"last_sync_error"?: string | null,"last_sync_error_at"?: string | null,"refresh_token_enc": string,"scopes"?: (string)[],"status"?: Database["public"]['Enums']["gmail_connection_status"],"updated_at"?: string,"user_id"?: string
+                  }
+                  Update: {
+                    "briefing"?: string | null,"briefing_at"?: string | null,"briefing_source_hash"?: string | null,"connected_at"?: string,"created_at"?: string,"google_email"?: string,"last_sync_at"?: string | null,"last_sync_error"?: string | null,"last_sync_error_at"?: string | null,"refresh_token_enc"?: string,"scopes"?: (string)[],"status"?: Database["public"]['Enums']["gmail_connection_status"],"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     
@@ -468,7 +516,7 @@ isOneToOne: false
           Views: {
             "ai_usage_monthly": {
                   Row: {
-                    "cache_creation_input_tokens": number | null,"cache_read_input_tokens": number | null,"input_tokens": number | null,"model": string | null,"month": string | null,"output_tokens": number | null,"requests": number | null,"user_id": string
+                    "cache_creation_input_tokens": number | null,"cache_read_input_tokens": number | null,"input_tokens": number | null,"model": string | null,"month": string | null,"output_tokens": number | null,"requests": number | null,"user_id": string | null
                   }
                   ComputedFields: never
                   Relationships: [
@@ -496,7 +544,7 @@ isOneToOne: false
             [_ in never]: never
           }
           Enums: {
-            "ai_action_status": "proposed"|"approved"|"rejected"|"executed"|"failed","ai_risk_level": "low"|"high","goal_category": "career"|"finance"|"health_fitness"|"learning"|"personal_growth"|"relationships"|"business"|"other","goal_horizon": "long_term"|"annual"|"quarterly"|"short_term","goal_status": "not_started"|"active"|"on_hold"|"achieved"|"abandoned","memory_category": "preference"|"long_term_goal"|"working_style"|"recurring_obstacle"|"decision"|"lesson"|"behavioural_observation","memory_confidence": "confirmed"|"hypothesis","memory_status": "proposed"|"approved"|"rejected"|"archived","plan_item_outcome": "done"|"partial"|"skipped"|"moved","priority_level": "low"|"medium"|"high"|"critical","progress_method": "auto"|"metric"|"milestones"|"tasks"|"manual","project_status": "planning"|"active"|"on_hold"|"completed"|"cancelled","task_status": "inbox"|"next"|"in_progress"|"waiting"|"done"|"cancelled"
+            "ai_action_status": "proposed"|"approved"|"rejected"|"executed"|"failed","ai_risk_level": "low"|"high","email_importance": "critical"|"high"|"medium"|"low","gmail_connection_status": "active"|"needs_reconnect","goal_category": "career"|"finance"|"health_fitness"|"learning"|"personal_growth"|"relationships"|"business"|"other","goal_horizon": "long_term"|"annual"|"quarterly"|"short_term","goal_status": "not_started"|"active"|"on_hold"|"achieved"|"abandoned","memory_category": "preference"|"long_term_goal"|"working_style"|"recurring_obstacle"|"decision"|"lesson"|"behavioural_observation","memory_confidence": "confirmed"|"hypothesis","memory_status": "proposed"|"approved"|"rejected"|"archived","plan_item_outcome": "done"|"partial"|"skipped"|"moved","priority_level": "low"|"medium"|"high"|"critical","progress_method": "auto"|"metric"|"milestones"|"tasks"|"manual","project_status": "planning"|"active"|"on_hold"|"completed"|"cancelled","task_status": "inbox"|"next"|"in_progress"|"waiting"|"done"|"cancelled"
           }
           CompositeTypes: {
             [_ in never]: never
@@ -616,7 +664,7 @@ export const Constants = {
           }
         },"public": {
           Enums: {
-            "ai_action_status": ["proposed", "approved", "rejected", "executed", "failed"],"ai_risk_level": ["low", "high"],"goal_category": ["career", "finance", "health_fitness", "learning", "personal_growth", "relationships", "business", "other"],"goal_horizon": ["long_term", "annual", "quarterly", "short_term"],"goal_status": ["not_started", "active", "on_hold", "achieved", "abandoned"],"memory_category": ["preference", "long_term_goal", "working_style", "recurring_obstacle", "decision", "lesson", "behavioural_observation"],"memory_confidence": ["confirmed", "hypothesis"],"memory_status": ["proposed", "approved", "rejected", "archived"],"plan_item_outcome": ["done", "partial", "skipped", "moved"],"priority_level": ["low", "medium", "high", "critical"],"progress_method": ["auto", "metric", "milestones", "tasks", "manual"],"project_status": ["planning", "active", "on_hold", "completed", "cancelled"],"task_status": ["inbox", "next", "in_progress", "waiting", "done", "cancelled"]
+            "ai_action_status": ["proposed", "approved", "rejected", "executed", "failed"],"ai_risk_level": ["low", "high"],"email_importance": ["critical", "high", "medium", "low"],"gmail_connection_status": ["active", "needs_reconnect"],"goal_category": ["career", "finance", "health_fitness", "learning", "personal_growth", "relationships", "business", "other"],"goal_horizon": ["long_term", "annual", "quarterly", "short_term"],"goal_status": ["not_started", "active", "on_hold", "achieved", "abandoned"],"memory_category": ["preference", "long_term_goal", "working_style", "recurring_obstacle", "decision", "lesson", "behavioural_observation"],"memory_confidence": ["confirmed", "hypothesis"],"memory_status": ["proposed", "approved", "rejected", "archived"],"plan_item_outcome": ["done", "partial", "skipped", "moved"],"priority_level": ["low", "medium", "high", "critical"],"progress_method": ["auto", "metric", "milestones", "tasks", "manual"],"project_status": ["planning", "active", "on_hold", "completed", "cancelled"],"task_status": ["inbox", "next", "in_progress", "waiting", "done", "cancelled"]
           }
         }
 } as const

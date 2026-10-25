@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import "./helpers"; // loads .env.local so the real secret values can be checked for
+import { resetUser } from "./helpers"; // also loads .env.local so the real secret values can be checked for
 
 test("every response carries security headers", async ({ request }) => {
   const res = await request.get("/login");
@@ -28,15 +28,24 @@ test.describe("health check", () => {
 });
 
 test("no secret reaches the browser", async ({ page }) => {
+  await resetUser(); // Gmail not connected, so the Connect button is shown
   const bodies: string[] = [];
   page.on("response", async (r) => {
     if (/\.(js|css)$|text\/html/.test(r.url() + (r.headers()["content-type"] ?? ""))) bodies.push(await r.text().catch(() => ""));
   });
   for (const path of ["/", "/companion", "/settings"]) await page.goto(path, { waitUntil: "networkidle" });
+  // The Connect Gmail redirect must carry only the public client ID, never the secret.
+  const connect = page.waitForRequest((r) => r.url().startsWith("http://127.0.0.1:4200/o/oauth2/v2/auth"));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Connect Gmail" }).click();
+  const authUrl = (await connect).url();
+  bodies.push(authUrl);
+  expect(new URL(authUrl).searchParams.get("client_id")).toBe("e2e-client-id");
   const all = bodies.join("\n");
   expect(all.length).toBeGreaterThan(1000);
   // Secret values (Settings may name the variables, but never show their values)
-  for (const secret of ["sk-ant-e2e-mock-key", process.env.SUPABASE_SECRET_KEY!]) {
+  // Includes the test Google client secret and token-encryption key (see playwright.config.ts).
+  for (const secret of ["sk-ant-e2e-mock-key", process.env.SUPABASE_SECRET_KEY!, "e2e-client-secret", Buffer.alloc(32, 7).toString("base64")]) {
     expect(secret).toBeTruthy();
     expect(all.includes(secret), `a page or script contains ${secret.slice(0, 10)}…`).toBe(false);
   }

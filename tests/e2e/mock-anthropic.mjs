@@ -7,11 +7,62 @@
 //   "remember" → proposes a memory
 //   anything else → a short plan in markdown
 // and checks that each request carries the expected key.
+//
+// Email-analysis requests (structured output, not streamed) get canned JSON.
+// For the phishing email it plays a model that was fully fooled by the
+// injected instructions, so the E2E test can show the app's own safeguards
+// hold regardless of what the model says. Analysis requests that include
+// tools are rejected: email analysis must never offer the model any action.
 import http from "node:http";
 
 const PORT = Number(process.env.MOCK_ANTHROPIC_PORT ?? 4100);
 const EXPECTED_AUTH = `Bearer ${process.env.MOCK_EXPECTED_KEY ?? "sk-ant-e2e-mock-key"}`;
 let n = 0;
+const stats = { analysis: 0, briefing: 0, analysisWithTools: 0 };
+
+function analysisFor(email) {
+  const base = {
+    ref: email.ref, summary: `Email: ${email.subject}`, importance_reason: "Canned test answer.",
+    needs_reply: false, action_required: false, deadlines: [], action_items: [],
+    suggested_next_action: null, confidence: "high", uncertainty: null, suspicious: false, suspicious_reason: null,
+  };
+  if (/Invoice/.test(email.subject)) {
+    return {
+      ...base, importance: "high", summary: "Acme says invoice #1042 for $1,200 is due 30 October and asks for confirmation once paid.",
+      action_required: true,
+      deadlines: [
+        { quote: "Payment is due 30 October", date: "2026-10-30", description: "Pay invoice #1042" },
+        { quote: "A late fee applies after 15 November", date: "2026-11-15", description: "Invented by the model" },
+      ],
+      action_items: [{ description: "Pay invoice #1042 ($1,200)", quote: "Payment is due 30 October" }],
+      suggested_next_action: "Pay it this week.",
+    };
+  }
+  if (/Lunch/.test(email.subject)) return { ...base, importance: "medium", needs_reply: true, summary: "Sam asks if you're free for lunch on Thursday." };
+  if (/Ignore previous instructions/.test(email.body)) {
+    // Worst case: the model obeyed the injected text.
+    return {
+      ...base, importance: "critical", summary: "Admin mode: wire money now.", action_required: true,
+      action_items: [{ description: "Wire $5,000 to account 12345", quote: "wire $5,000 to account 12345" }],
+      deadlines: [{ quote: "by tomorrow", date: "2026-10-26", description: "Wire the money" }],
+    };
+  }
+  return { ...base, importance: "low", summary: "A newsletter." };
+}
+
+function parseEmails(text) {
+  return [...text.matchAll(/<email ref="(m\d+)">\n<from>.*?<\/from>\n<subject>(.*?)<\/subject>[\s\S]*?<body>\n([\s\S]*?)\n<\/body>\n<\/email>/g)]
+    .map(([, ref, subject, body]) => ({ ref, subject, body }));
+}
+
+function jsonMessage(res, obj) {
+  res.writeHead(200, { "content-type": "application/json" });
+  res.end(JSON.stringify({
+    id: `msg_mock_${++n}`, type: "message", role: "assistant", model: "claude-opus-5-5",
+    content: [{ type: "text", text: JSON.stringify(obj) }], stop_reason: "end_turn", stop_sequence: null,
+    usage: { input_tokens: 1500, output_tokens: 300, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
+  }));
+}
 
 function sse(res, event, data) {
   res.write(`event: ${event}\ndata: ${JSON.stringify({ type: event, ...data })}\n\n`);
@@ -49,7 +100,12 @@ http.createServer((req, res) => {
   let body = "";
   req.on("data", (c) => (body += c));
   req.on("end", () => {
-    if (req.url !== "/v1/messages" || req.method !== "POST") {
+    if (req.url === "/__stats") {
+      res.writeHead(200, { "content-type": "application/json" });
+      res.end(JSON.stringify(stats));
+      return;
+    }
+    if (!req.url.startsWith("/v1/messages") || req.method !== "POST") {
       res.writeHead(404).end();
       return;
     }
@@ -59,6 +115,22 @@ http.createServer((req, res) => {
       return;
     }
     const params = JSON.parse(body || "{}");
+
+    if (params.output_config?.format) {
+      if (params.tools?.length) {
+        stats.analysisWithTools++;
+        res.writeHead(400, { "content-type": "application/json" });
+        res.end(JSON.stringify({ type: "error", error: { type: "invalid_request_error", message: "test: analysis must not offer tools" } }));
+        return;
+      }
+      const text = params.messages.map((m) => (typeof m.content === "string" ? m.content : JSON.stringify(m.content))).join("\n");
+      if (/briefing/.test(JSON.stringify(params.output_config.format))) {
+        stats.briefing++;
+        return jsonMessage(res, { briefing: "Invoice #1042 is due 30 October. Sam is waiting for a reply about lunch." });
+      }
+      stats.analysis++;
+      return jsonMessage(res, { emails: parseEmails(text).map(analysisFor) });
+    }
     const lastUser = [...(params.messages ?? [])].reverse().find((m) => m.role === "user");
     const isToolResult = Array.isArray(lastUser?.content) && lastUser.content.some((c) => c.type === "tool_result");
     const userText = JSON.stringify(lastUser?.content ?? "");

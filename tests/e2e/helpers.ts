@@ -41,6 +41,7 @@ export function daysFromToday(n: number) {
 const USER_TABLES = [
   "ai_action_logs", "conversations", "memories", "tasks", "goals", "projects",
   "daily_plans", "daily_reviews", "weekly_reviews", "finding_dismissals",
+  "email_messages", "gmail_connections", "email_analysis_runs",
 ] as const;
 
 /** Delete all of a test user's data and restore default preferences. */

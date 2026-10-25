@@ -1,5 +1,23 @@
 # Progress log
 
+## Gmail Intelligence ✅ built · ⏳ live check pending your Google credentials (2026-10-25)
+
+**Implemented**
+- **Google OAuth (server-side):** authorization-code flow with PKCE, `access_type=offline`, only the `gmail.readonly` scope. CSRF `state` in a signed, HTTP-only, 10-minute cookie bound to the signed-in user. Callback `/api/gmail/callback` handles declined consent, missing scope, missing refresh token, and forged/expired state; it proves access with a real read-only Gmail request before saving. Refresh tokens are stored encrypted (AES-256-GCM, key only in the server environment). Connect, status, Reconnect, and Disconnect (revokes at Google + deletes stored email) on My Day and in Settings.
+- **Gmail retrieval:** recent inbox (default 7 days, 50 messages), unread first, paginated, deduplicated by Gmail message ID (in code and by a unique constraint); only new messages are downloaded; read/unread state kept current; messages outside the window pruned. Safe MIME parsing: prefers text/plain, HTML converted to text (scripts, styles, simple hidden text removed), attachments skipped, charsets and encoded headers decoded, size and nesting bounded, broken data tolerated.
+- **Claude analysis:** structured output validated with Zod — importance, summary, reason, reply needed, action required, deadlines, action items, suggested next action, confidence/uncertainty, suspicious flag. Email text is wrapped and treated as untrusted; no tools are offered. Deadlines need a verbatim quote that the server finds in the email, otherwise they're dropped. Cached by content hash (never re-analysed unless the email changes); batches of 8; up to 25 per refresh; usage logged and included in the monthly AI budget. A short AI briefing is regenerated only when the analysed set changes.
+- **My Day card:** counts (important, need reply, actions & deadlines, unread), AI briefing, tabs (Urgent / Needs reply / Actions & deadlines / All), Gmail links, last sync time, Refresh, clear states (not set up, not connected, needs reconnect, sync error, not analysed). AI inferences are labelled "AI:"; deadlines show the email's own words.
+- **Email → task:** only after a confirmation dialog; built on the server from the stored analysis (priority from importance, due date only from a verified deadline, Gmail link in the description, tag `email`); one task per email.
+- **Never:** sends, deletes, archives, labels, or modifies email.
+
+**Verified**
+- Unit tests (24 new): MIME parsing incl. multipart, HTML-only, Latin-1, unknown charset, broken base64, deep nesting, oversized bodies, invisible characters; quote verification and invented-deadline removal; prompt wrapper can't be closed or forged by email text; token encryption (tamper/wrong-key fails); state check (missing/forged/expired/mismatched/other user); Google error classification.
+- Integration tests (9, real local database, fake Gmail + fake Claude): unread-first pagination and dedupe, storing, verified analysis, briefing, no re-download/re-analysis on the second sync, no-key mode, revoked → needs reconnect, rate limit → stays connected, undecryptable token, pruning, other users can't read emails or tokens.
+- Database tests (12 new, 62 total): Row Level Security, one row per Gmail message, append-only usage log, email usage in the monthly view, emails can't link to another user's tasks.
+- Browser tests (6 new, 49 total, run twice): the real OAuth flow against a fake Google (state, PKCE, code exchange, refresh, revoke), sync + analysis + UI, confirm-before-task, a fully "fooled" model can't cause any action, declined consent / missing scope / forged state, revoked access → reconnect, disconnect revokes and deletes, sync endpoint refuses cross-site and signed-out calls, accessibility of the populated card in light and dark mode, phone width, Google secrets never reach the browser.
+- Fixed along the way: dark-mode red text (4.48:1 → 5.3:1) and white text on red buttons in dark mode (3.4:1 → 6.6:1); light-mode amber darkened again; a timing-sensitive goals test.
+- **Not verified:** a real Google consent and real Gmail data (needs your Google Cloud credentials and your browser), and Claude's real analysis quality (needs an API key). The fakes check our side of the protocol, not Google's or Claude's actual behaviour.
+
 ## Phase 5 — Quality and deployment readiness ✅ (2026-10-25)
 
 **Implemented**
@@ -95,8 +113,9 @@
 Next.js 16 + TypeScript + Tailwind 4 app shell, theming, navigation, env validation, health endpoint.
 
 ## Remaining issues / open items
-- **Not pushed to GitHub** — the cloud container is temporary.
-- **No hosted Supabase project yet** (`supabase.com` blocked here); everything was verified against a local Supabase.
+- Deployed on Vercel with a hosted Supabase project (set up by the owner); automated tests run against a local Supabase.
+- Gmail in Google's Testing mode: refresh tokens expire after 7 days, so Gmail needs reconnecting weekly (one click).
+- Gmail sync is manual (Refresh); there is no background scheduler.
 - **No Claude API key yet** — live AI behaviour and real costs unverified.
 - No undo button for AI actions yet (the before-state is recorded, so it can be added).
 - Very long conversations aren't compacted; start a new conversation per topic (server-side compaction can be enabled later).
@@ -108,6 +127,7 @@ Next.js 16 + TypeScript + Tailwind 4 app shell, theming, navigation, env validat
 - No rate limiting on the chat endpoint beyond sign-in, the monthly budget guard, and the Anthropic Console spend limit (single-user app).
 
 ## Next steps
+0. Gmail: follow `docs/GMAIL_SETUP.md`, connect, and confirm a real sync works.
 1. Push to GitHub and check the CI run passes.
 2. Deploy following `docs/DEPLOYMENT.md`.
 3. Add an Anthropic API key and do the live Companion check (tone, tool choices, real costs).

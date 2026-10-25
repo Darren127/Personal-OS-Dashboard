@@ -17,6 +17,11 @@ const optionalString = z
   .optional()
   .transform((v) => (v ? v : undefined));
 
+const optionalInt = (min: number, max: number) =>
+  optionalString
+    .transform((v) => (v === undefined ? undefined : Number(v)))
+    .pipe(z.number().int().min(min).max(max).optional());
+
 const envSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: optionalString.pipe(z.url().optional()),
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: optionalString,
@@ -26,6 +31,14 @@ const envSchema = z.object({
   AI_MONTHLY_BUDGET_USD: optionalString
     .transform((v) => (v === undefined ? undefined : Number(v)))
     .pipe(z.number().positive().optional()),
+  // Gmail Intelligence (Google OAuth). All server-only.
+  GOOGLE_CLIENT_ID: optionalString,
+  GOOGLE_CLIENT_SECRET: optionalString,
+  GOOGLE_REDIRECT_URI: optionalString.pipe(z.url().optional()),
+  GOOGLE_TOKEN_ENCRYPTION_KEY: optionalString,
+  GMAIL_SYNC_DAYS: optionalInt(1, 90),
+  GMAIL_SYNC_MAX_MESSAGES: optionalInt(1, 500),
+  GMAIL_ANALYZE_MAX: optionalInt(0, 200),
 });
 
 export type ServerEnv = z.infer<typeof envSchema>;
@@ -62,6 +75,12 @@ export function getIntegrationStatus() {
       apiKey: Boolean(env.ANTHROPIC_API_KEY),
       model: env.ANTHROPIC_MODEL ?? null,
       monthlyBudgetUsd: env.AI_MONTHLY_BUDGET_USD ?? null,
+    },
+    gmail: {
+      clientId: Boolean(env.GOOGLE_CLIENT_ID),
+      clientSecret: Boolean(env.GOOGLE_CLIENT_SECRET),
+      redirectUri: Boolean(env.GOOGLE_REDIRECT_URI),
+      encryptionKey: Boolean(env.GOOGLE_TOKEN_ENCRYPTION_KEY),
     },
     scheduler: { configured: false },
     problems,

@@ -35,7 +35,9 @@ test("a goal measured by a metric, then by milestones, with links and review not
   for (const t of ["Open account", "Automate transfer", "Reach 6,000", "Reach 12,000"]) {
     await page.getByLabel("New milestone title").fill(t);
     await page.locator("form", { has: page.getByLabel("New milestone title") }).getByRole("button", { name: "Add" }).click();
-    await toast(page, "Milestone added");
+    // Wait for this milestone itself (an earlier toast may still be on screen).
+    await expect(page.getByRole("checkbox", { name: `Mark milestone "${t}" as done` })).toBeVisible();
+    await expect(page.getByLabel("New milestone title")).toHaveValue("");
   }
   await page.getByRole("checkbox", { name: 'Mark milestone "Open account" as done' }).click();
   await toast(page, "Milestone completed");

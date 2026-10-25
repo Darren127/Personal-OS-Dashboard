@@ -5,6 +5,8 @@ import { CheckCircle2, CircleDashed } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
 import { AutoExecuteToggle } from "@/components/ai-settings";
+import { DisconnectGmailButton } from "@/components/email/disconnect-gmail";
+import { ConnectGmailButton } from "@/components/email/email-intelligence-view";
 import { PreferencesForm } from "@/components/preferences-form";
 import { Skeleton } from "@/components/skeletons";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +20,7 @@ import {
 import { getIntegrationStatus } from "@/lib/server/env";
 import { getAiConfig } from "@/lib/server/ai/config";
 import { monthToDateCostUsd } from "@/lib/server/ai/engine";
+import { getGmailConfig } from "@/lib/server/gmail/config";
 import { getPreferences } from "@/lib/server/preferences";
 import { requireUser } from "@/lib/supabase/server";
 
@@ -116,6 +119,26 @@ async function IntegrationStatus() {
 
       <Card className="lg:col-span-2">
         <CardHeader>
+          <CardTitle>Gmail (Google OAuth)</CardTitle>
+          <CardDescription>
+            Read-only access to recent email for Email Intelligence. Set up in Google Cloud Console — see docs/GMAIL_SETUP.md.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <ul className="grid divide-y sm:grid-cols-2 sm:gap-x-6 sm:divide-y-0">
+            <StatusRow label="OAuth client ID" ok={s.gmail.clientId} hint="GOOGLE_CLIENT_ID" />
+            <StatusRow label="OAuth client secret" ok={s.gmail.clientSecret} hint="GOOGLE_CLIENT_SECRET — server only" />
+            <StatusRow label="Redirect URI" ok={s.gmail.redirectUri} hint="GOOGLE_REDIRECT_URI — must end with /api/gmail/callback" />
+            <StatusRow label="Token encryption key" ok={s.gmail.encryptionKey} hint="GOOGLE_TOKEN_ENCRYPTION_KEY — server only" />
+          </ul>
+          <Suspense fallback={<Skeleton className="h-9 w-48" />}>
+            <GmailConnection />
+          </Suspense>
+        </CardContent>
+      </Card>
+
+      <Card className="lg:col-span-2">
+        <CardHeader>
           <CardTitle>Reminders and scheduled reviews</CardTitle>
           <CardDescription>
             No scheduler or notification service is connected, so Personal OS cannot contact you on its own.
@@ -123,6 +146,24 @@ async function IntegrationStatus() {
           </CardDescription>
         </CardHeader>
       </Card>
+    </div>
+  );
+}
+
+async function GmailConnection() {
+  const { supabase } = await requireUser();
+  const cfg = getGmailConfig();
+  if (!cfg.ok) return <p className="text-sm text-muted-foreground">Connect Gmail becomes available once all four settings above are set.</p>;
+  const { data: conn } = await supabase.from("gmail_connections").select("google_email, status, connected_at").maybeSingle();
+  if (!conn) return <ConnectGmailButton />;
+  return (
+    <div className="flex flex-wrap items-center gap-3 text-sm">
+      <span className="[overflow-wrap:anywhere]">
+        Connected as <strong>{conn.google_email}</strong>
+        {conn.status === "needs_reconnect" && <Badge variant="warning" className="ml-2">Needs reconnecting</Badge>}
+      </span>
+      {conn.status === "needs_reconnect" && <ConnectGmailButton label="Reconnect Gmail" />}
+      <DisconnectGmailButton />
     </div>
   );
 }

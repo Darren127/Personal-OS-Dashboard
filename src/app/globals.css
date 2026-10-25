@@ -27,7 +27,7 @@
   --accent-foreground: oklch(0.3 0.05 195);
   --destructive: oklch(0.53 0.2 27);
   --success: oklch(0.5 0.13 155);
-  --warning: oklch(0.55 0.13 70);
+  --warning: oklch(0.5 0.12 65);
   --border: oklch(0.91 0.006 90);
   --input: oklch(0.91 0.006 90);
   --ring: oklch(0.48 0.08 195);
@@ -53,7 +53,7 @@
   --muted-foreground: oklch(0.68 0.012 260);
   --accent: oklch(0.3 0.03 195);
   --accent-foreground: oklch(0.92 0.02 190);
-  --destructive: oklch(0.66 0.19 25);
+  --destructive: oklch(0.72 0.17 25);
   --success: oklch(0.7 0.13 155);
   --warning: oklch(0.78 0.13 75);
   --border: oklch(1 0 0 / 9%);

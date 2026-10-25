@@ -102,12 +102,20 @@ Long Companion answers can take up to a minute; the chat route allows up to
 300 seconds (`maxDuration`). On Vercel's free plan the limit may be lower — if
 long replies are cut off, lower `ANTHROPIC_EFFORT` to `low`.
 
+## 6. Turn on Gmail Intelligence (optional)
+
+Follow [`GMAIL_SETUP.md`](GMAIL_SETUP.md). On Vercel, set `GOOGLE_CLIENT_ID`,
+`GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`
+(`https://<your-app>.vercel.app/api/gmail/callback`, registered in Google
+Cloud) and `GOOGLE_TOKEN_ENCRYPTION_KEY`, then redeploy.
+
 ## Security checklist
 
 - [ ] Sign-ups disabled in Supabase.
 - [ ] `SUPABASE_SECRET_KEY` is **not** in Vercel.
 - [ ] Nothing secret starts with `NEXT_PUBLIC_`.
 - [ ] Anthropic Console spend limit set.
+- [ ] If Gmail is enabled: `GOOGLE_CLIENT_SECRET` and `GOOGLE_TOKEN_ENCRYPTION_KEY` set only in Vercel (never `NEXT_PUBLIC_`), and the Google consent screen requests only `gmail.readonly`.
 - [ ] `/api/health` signed out shows only `ok` and `time`.
 - [ ] Responses carry `X-Frame-Options: DENY` and `X-Content-Type-Options: nosniff`
       (browser dev tools → Network → any request → Headers).
