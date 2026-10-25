@@ -4,24 +4,10 @@ import { refresh } from "next/cache";
 
 import { dbFailed, formToObject, validationFailed, type ActionResult } from "@/lib/actions";
 import { getToday } from "@/lib/server/preferences";
-import { requireUser, type Db } from "@/lib/supabase/server";
+import { ensurePlan, saveReviewWithOutcomes } from "@/lib/server/plans";
+import { requireUser } from "@/lib/supabase/server";
 import { idSchema } from "@/lib/validation/task";
 import { dailyNotesSchema, dailyReviewSchema, timeBlockSchema } from "@/lib/validation/my-day";
-
-/** Get (or create) the daily plan row for `date`. */
-async function ensurePlan(supabase: Db, date: string) {
-  const existing = await supabase.from("daily_plans").select("id").eq("plan_date", date).maybeSingle();
-  if (existing.error) return { error: existing.error };
-  if (existing.data) return { id: existing.data.id };
-
-  const created = await supabase.from("daily_plans").insert({ plan_date: date }).select("id").single();
-  if (created.error?.code === "23505") {
-    // Created concurrently (e.g. two tabs) — use that one.
-    const again = await supabase.from("daily_plans").select("id").eq("plan_date", date).single();
-    return again.error ? { error: again.error } : { id: again.data.id };
-  }
-  return created.error ? { error: created.error } : { id: created.data.id };
-}
 
 export async function addPriority(taskId: string): Promise<ActionResult> {
   if (!idSchema.safeParse(taskId).success) return { ok: false, error: "Invalid task." };
@@ -144,11 +130,7 @@ export async function saveDailyNotes(_prev: ActionResult, formData: FormData): P
   return { ok: true, message: "Notes saved." };
 }
 
-/**
- * Saves the end-of-day review and records what happened to each planned task,
- * derived from the task's actual state (not guessed):
- * done → done, in progress → partial, due date moved later → moved, else skipped.
- */
+/** Saves the end-of-day review and records each planned task's outcome. */
 export async function saveDailyReview(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   const parsed = dailyReviewSchema.safeParse(formToObject(formData));
   if (!parsed.success) return validationFailed(parsed.error);
@@ -158,42 +140,8 @@ export async function saveDailyReview(_prev: ActionResult, formData: FormData): 
   }
 
   const { supabase } = await requireUser();
-  const today = await getToday();
-  const { error } = await supabase.from("daily_reviews").upsert(
-    {
-      review_date: today,
-      wins: r.wins ?? null,
-      challenges: r.challenges ?? null,
-      lessons: r.lessons ?? null,
-      tomorrow_focus: r.tomorrow_focus ?? null,
-      energy: r.energy ?? null,
-      mood: r.mood ?? null,
-    },
-    { onConflict: "user_id,review_date" },
-  );
+  const { error } = await saveReviewWithOutcomes(supabase, await getToday(), r);
   if (error) return dbFailed(error);
-
-  const plan = await supabase
-    .from("daily_plans")
-    .select("id, items:daily_plan_items(id, task:tasks(status, due_date))")
-    .eq("plan_date", today)
-    .maybeSingle();
-  if (plan.error) return dbFailed(plan.error);
-
-  for (const item of plan.data?.items ?? []) {
-    if (!item.task) continue;
-    const t = item.task;
-    const outcome =
-      t.status === "done"
-        ? "done"
-        : t.status === "in_progress"
-          ? "partial"
-          : t.due_date && t.due_date > today
-            ? "moved"
-            : "skipped";
-    const res = await supabase.from("daily_plan_items").update({ outcome }).eq("id", item.id);
-    if (res.error) return dbFailed(res.error);
-  }
 
   refresh();
   return { ok: true, message: "Review saved. Well done for closing the day." };

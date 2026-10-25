@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { CheckCircle2, CircleDashed } from "lucide-react";
 
 import { PageHeader } from "@/components/page-header";
+import { AutoExecuteToggle } from "@/components/ai-settings";
 import { PreferencesForm } from "@/components/preferences-form";
 import { Skeleton } from "@/components/skeletons";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +16,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { getIntegrationStatus } from "@/lib/server/env";
+import { getAiConfig } from "@/lib/server/ai/config";
+import { monthToDateCostUsd } from "@/lib/server/ai/engine";
 import { getPreferences } from "@/lib/server/preferences";
+import { requireUser } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Settings" };
 
@@ -144,6 +148,44 @@ async function Preferences() {
   );
 }
 
+async function AiSettings() {
+  const { supabase } = await requireUser();
+  const [prefs, spent] = await Promise.all([getPreferences(), monthToDateCostUsd(supabase)]);
+  const config = getAiConfig();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>AI Companion</CardTitle>
+        <CardDescription>What the AI may do on its own, and what it costs.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <AutoExecuteToggle enabled={prefs.aiAutoExecuteLowRisk} />
+        <dl className="grid gap-3 border-t pt-4 text-sm sm:grid-cols-3">
+          <div>
+            <dt className="text-xs text-muted-foreground">Model</dt>
+            <dd className="font-mono text-xs">{config.model}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted-foreground">Thinking effort</dt>
+            <dd>{config.effort}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-muted-foreground">Estimated spend this month</dt>
+            <dd>
+              US${spent.toFixed(2)}
+              {config.monthlyBudgetUsd !== null && <span className="text-muted-foreground"> of US${config.monthlyBudgetUsd} budget</span>}
+            </dd>
+          </div>
+        </dl>
+        <p className="text-xs text-muted-foreground">
+          Spend is estimated from token counts and list prices; your Anthropic Console shows the actual bill.
+          {config.monthlyBudgetUsd === null && " Set AI_MONTHLY_BUDGET_USD to stop the AI when a monthly limit is reached."}
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function SettingsPage() {
   return (
     <>
@@ -154,6 +196,11 @@ export default function SettingsPage() {
       <div className="mb-6">
         <Suspense fallback={<Skeleton className="h-64 rounded-xl" />}>
           <Preferences />
+        </Suspense>
+      </div>
+      <div className="mb-6">
+        <Suspense fallback={<Skeleton className="h-48 rounded-xl" />}>
+          <AiSettings />
         </Suspense>
       </div>
       <h2 className="mb-3 text-sm font-semibold text-muted-foreground">Connections (values are never shown)</h2>

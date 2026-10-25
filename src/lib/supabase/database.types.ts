@@ -25,14 +25,14 @@ export type Database = {
           Tables: {
             "ai_action_logs": {
                   Row: {
-                    "before_state": Json | null,"conversation_id": string | null,"created_at": string,"decided_at": string | null,"entity_id": string | null,"entity_type": string | null,"error": string | null,"executed_at": string | null,"id": string,"input": NonNullable<Json>,"message_id": string | null,"result": Json | null,"risk_level": Database["public"]['Enums']["ai_risk_level"],"status": Database["public"]['Enums']["ai_action_status"],"tool_name": string,"user_id": string
+                    "before_state": Json | null,"conversation_id": string | null,"created_at": string,"decided_at": string | null,"entity_id": string | null,"entity_type": string | null,"error": string | null,"executed_at": string | null,"id": string,"input": NonNullable<Json>,"message_id": string | null,"result": Json | null,"risk_level": Database["public"]['Enums']["ai_risk_level"],"status": Database["public"]['Enums']["ai_action_status"],"summary": string | null,"tool_name": string,"tool_use_id": string | null,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "before_state"?: Json | null,"conversation_id"?: string | null,"created_at"?: string,"decided_at"?: string | null,"entity_id"?: string | null,"entity_type"?: string | null,"error"?: string | null,"executed_at"?: string | null,"id"?: string,"input"?: NonNullable<Json>,"message_id"?: string | null,"result"?: Json | null,"risk_level"?: Database["public"]['Enums']["ai_risk_level"],"status"?: Database["public"]['Enums']["ai_action_status"],"tool_name": string,"user_id"?: string
+                    "before_state"?: Json | null,"conversation_id"?: string | null,"created_at"?: string,"decided_at"?: string | null,"entity_id"?: string | null,"entity_type"?: string | null,"error"?: string | null,"executed_at"?: string | null,"id"?: string,"input"?: NonNullable<Json>,"message_id"?: string | null,"result"?: Json | null,"risk_level"?: Database["public"]['Enums']["ai_risk_level"],"status"?: Database["public"]['Enums']["ai_action_status"],"summary"?: string | null,"tool_name": string,"tool_use_id"?: string | null,"user_id"?: string
                   }
                   Update: {
-                    "before_state"?: Json | null,"conversation_id"?: string | null,"created_at"?: string,"decided_at"?: string | null,"entity_id"?: string | null,"entity_type"?: string | null,"error"?: string | null,"executed_at"?: string | null,"id"?: string,"input"?: NonNullable<Json>,"message_id"?: string | null,"result"?: Json | null,"risk_level"?: Database["public"]['Enums']["ai_risk_level"],"status"?: Database["public"]['Enums']["ai_action_status"],"tool_name"?: string,"user_id"?: string
+                    "before_state"?: Json | null,"conversation_id"?: string | null,"created_at"?: string,"decided_at"?: string | null,"entity_id"?: string | null,"entity_type"?: string | null,"error"?: string | null,"executed_at"?: string | null,"id"?: string,"input"?: NonNullable<Json>,"message_id"?: string | null,"result"?: Json | null,"risk_level"?: Database["public"]['Enums']["ai_risk_level"],"status"?: Database["public"]['Enums']["ai_action_status"],"summary"?: string | null,"tool_name"?: string,"tool_use_id"?: string | null,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -51,14 +51,14 @@ isOneToOne: false
                   ]
                 },"conversation_messages": {
                   Row: {
-                    "content": NonNullable<Json>,"conversation_id": string,"created_at": string,"id": string,"input_tokens": number | null,"model": string | null,"output_tokens": number | null,"role": string,"text_content": string,"user_id": string
+                    "cache_creation_input_tokens": number | null,"cache_read_input_tokens": number | null,"content": NonNullable<Json>,"conversation_id": string,"created_at": string,"id": string,"input_tokens": number | null,"model": string | null,"output_tokens": number | null,"role": string,"search": unknown,"seq": number,"stop_reason": string | null,"text_content": string,"user_id": string,"visible": boolean
                   }
                   ComputedFields: never
                   Insert: {
-                    "content"?: NonNullable<Json>,"conversation_id": string,"created_at"?: string,"id"?: string,"input_tokens"?: number | null,"model"?: string | null,"output_tokens"?: number | null,"role": string,"text_content"?: string,"user_id"?: string
+                    "cache_creation_input_tokens"?: number | null,"cache_read_input_tokens"?: number | null,"content"?: NonNullable<Json>,"conversation_id": string,"created_at"?: string,"id"?: string,"input_tokens"?: number | null,"model"?: string | null,"output_tokens"?: number | null,"role": string,"search"?: never,"seq"?: never,"stop_reason"?: string | null,"text_content"?: string,"user_id"?: string,"visible"?: boolean
                   }
                   Update: {
-                    "content"?: NonNullable<Json>,"conversation_id"?: string,"created_at"?: string,"id"?: string,"input_tokens"?: number | null,"model"?: string | null,"output_tokens"?: number | null,"role"?: string,"text_content"?: string,"user_id"?: string
+                    "cache_creation_input_tokens"?: number | null,"cache_read_input_tokens"?: number | null,"content"?: NonNullable<Json>,"conversation_id"?: string,"created_at"?: string,"id"?: string,"input_tokens"?: number | null,"model"?: string | null,"output_tokens"?: number | null,"role"?: string,"search"?: never,"seq"?: never,"stop_reason"?: string | null,"text_content"?: string,"user_id"?: string,"visible"?: boolean
                   }
                   Relationships: [
                     {
@@ -217,14 +217,14 @@ isOneToOne: false
                   ]
                 },"memories": {
                   Row: {
-                    "category": Database["public"]['Enums']["memory_category"],"confidence": Database["public"]['Enums']["memory_confidence"],"content": string,"created_at": string,"evidence_count": number,"id": string,"importance": number,"last_referenced_at": string | null,"search": unknown,"source_conversation_id": string | null,"status": Database["public"]['Enums']["memory_status"],"updated_at": string,"user_id": string
+                    "category": Database["public"]['Enums']["memory_category"],"confidence": Database["public"]['Enums']["memory_confidence"],"content": string,"created_at": string,"created_by": string,"evidence_count": number,"id": string,"importance": number,"last_referenced_at": string | null,"search": unknown,"source_conversation_id": string | null,"status": Database["public"]['Enums']["memory_status"],"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "category": Database["public"]['Enums']["memory_category"],"confidence"?: Database["public"]['Enums']["memory_confidence"],"content": string,"created_at"?: string,"evidence_count"?: number,"id"?: string,"importance"?: number,"last_referenced_at"?: string | null,"search"?: never,"source_conversation_id"?: string | null,"status"?: Database["public"]['Enums']["memory_status"],"updated_at"?: string,"user_id"?: string
+                    "category": Database["public"]['Enums']["memory_category"],"confidence"?: Database["public"]['Enums']["memory_confidence"],"content": string,"created_at"?: string,"created_by"?: string,"evidence_count"?: number,"id"?: string,"importance"?: number,"last_referenced_at"?: string | null,"search"?: never,"source_conversation_id"?: string | null,"status"?: Database["public"]['Enums']["memory_status"],"updated_at"?: string,"user_id"?: string
                   }
                   Update: {
-                    "category"?: Database["public"]['Enums']["memory_category"],"confidence"?: Database["public"]['Enums']["memory_confidence"],"content"?: string,"created_at"?: string,"evidence_count"?: number,"id"?: string,"importance"?: number,"last_referenced_at"?: string | null,"search"?: never,"source_conversation_id"?: string | null,"status"?: Database["public"]['Enums']["memory_status"],"updated_at"?: string,"user_id"?: string
+                    "category"?: Database["public"]['Enums']["memory_category"],"confidence"?: Database["public"]['Enums']["memory_confidence"],"content"?: string,"created_at"?: string,"created_by"?: string,"evidence_count"?: number,"id"?: string,"importance"?: number,"last_referenced_at"?: string | null,"search"?: never,"source_conversation_id"?: string | null,"status"?: Database["public"]['Enums']["memory_status"],"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -438,7 +438,15 @@ isOneToOne: false
                 }
           }
           Views: {
-            "goal_progress": {
+            "ai_usage_monthly": {
+                  Row: {
+                    "cache_creation_input_tokens": number | null,"cache_read_input_tokens": number | null,"input_tokens": number | null,"model": string | null,"month": string | null,"output_tokens": number | null,"requests": number | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Relationships: [
+                    
+                  ]
+                },"goal_progress": {
                   Row: {
                     "goal_id": string,"metric_pct": number | null,"milestones_done": number | null,"milestones_total": number | null,"progress": number | null,"progress_source": string | null,"tasks_done": number | null,"tasks_total": number | null,"user_id": string
                   }

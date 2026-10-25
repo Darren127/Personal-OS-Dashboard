@@ -29,3 +29,10 @@ user_preferences (timezone, working hours, AI permissions)
   - Goals (`auto`): metric → milestones → linked tasks; or an explicit method; `manual` only if chosen.
   - Projects: linked tasks (excluding cancelled), else milestones.
 - **Daily plan outcomes** are recorded when the end-of-day review is saved: `done`, `partial` (in progress), `moved` (due date pushed later), `skipped`.
+
+## AI Companion tables
+
+- **`conversation_messages`** stores every message exactly as sent to the Claude API: `content` is `json` (not `jsonb`, which would reorder keys), ordered by `seq`. It is **append-only** — users can't update or delete individual messages (deleting a conversation removes them). `role` can be `system` for the per-turn context notes; `visible = false` hides context notes and tool results from the transcript. Token usage per model call is stored for cost tracking.
+- **`ai_action_logs`** is an audit trail: no deletes; only outcome columns can be updated, and status can only move forward (proposed → approved/rejected; approved → executed/failed).
+- **`memories`**: `created_by` is `user` or `ai`; an AI-created memory must start as `proposed`.
+- **`ai_usage_monthly`** (view): tokens per model per month, for the spending guard.

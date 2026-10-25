@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Sparkles } from "lucide-react";
 import { Suspense } from "react";
 import {
   AlertTriangle,
@@ -81,6 +82,12 @@ async function MyDayContent() {
               {prefs.displayName ? `, ${prefs.displayName}` : ""}.
             </h1>
             {day.plan?.intention && <p className="text-sm text-muted-foreground">Intention: {day.plan.intention}</p>}
+            <Link
+              href="/companion?prompt=plan"
+              className="inline-flex items-center gap-1.5 pt-1 text-sm font-medium text-primary hover:underline"
+            >
+              <Sparkles className="size-4" /> Plan my day with the AI Companion
+            </Link>
           </div>
           <div className="w-full max-w-64 space-y-1.5">
             <div className="flex items-baseline justify-between text-sm">

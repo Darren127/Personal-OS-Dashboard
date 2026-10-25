@@ -40,6 +40,10 @@ export async function proxy(request: NextRequest) {
   const isPublic = PUBLIC_PATHS.some((p) => path === p || path.startsWith(`${p}/`));
 
   if (!signedIn && !isPublic) {
+    // API callers get a clear 401 instead of an HTML login page.
+    if (path.startsWith("/api/")) {
+      return NextResponse.json({ error: "Please sign in again." }, { status: 401 });
+    }
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     loginUrl.search = path === "/" ? "" : `?next=${encodeURIComponent(path)}`;

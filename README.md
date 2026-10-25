@@ -2,7 +2,7 @@
 
 An AI-assisted personal command centre: **My Day**, **Tasks**, **Life Goals**, **Projects**, and (from Phase 3) an **AI Companion**, all on one shared database.
 
-Status: **Phase 2 complete.** See [`docs/PROGRESS.md`](docs/PROGRESS.md) and the data model in [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md).
+Status: **Phase 3 complete** (AI Companion built; live-AI verification pending an API key). See [`docs/PROGRESS.md`](docs/PROGRESS.md), the data model in [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md), and the proactive-features design in [`docs/PROACTIVE.md`](docs/PROACTIVE.md).
 
 ## Tech stack
 
@@ -12,7 +12,7 @@ Status: **Phase 2 complete.** See [`docs/PROGRESS.md`](docs/PROGRESS.md) and the
 | Styling | Tailwind CSS 4, shadcn/ui-style components on Radix UI |
 | Database & login | Supabase (PostgreSQL, Row Level Security, Auth) |
 | Validation | Zod (every server action validates its input) |
-| Tests | pgTAP (database), Vitest (logic) |
+| Tests | pgTAP (database), Vitest (logic + engine integration) |
 | AI | Anthropic Claude API — Phase 3 |
 
 ## Running locally
@@ -62,7 +62,7 @@ Public sign-up is disabled — `create-user` is the only way to make an account.
 | `npm run dev` | Development server |
 | `npm run build` / `npm start` | Production build / serve it |
 | `npm run lint` / `npm run typecheck` | Code checks |
-| `npm test` | Unit tests (Vitest) |
+| `npm test` | Unit tests, plus AI-engine integration tests against the local database (skipped if it isn't running) |
 | `npm run db:test` | Database tests: security rules, constraints, triggers (needs `db:start`) |
 | `npm run db:start` / `db:stop` | Start/stop local Supabase (data is kept between restarts) |
 | `npm run db:types` | Regenerate TypeScript types after a schema change |
@@ -77,8 +77,33 @@ See [`.env.example`](.env.example).
 | `NEXT_PUBLIC_SUPABASE_URL` | Server | No — public by design |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Server | No — data is protected by Row Level Security |
 | `SUPABASE_SECRET_KEY` | `create-user` script only | **Yes** — bypasses security rules; never in the app |
-| `ANTHROPIC_API_KEY` | Server (Phase 3) | **Yes** — pay-as-you-go API billing, not part of Claude Pro |
-| `ANTHROPIC_MODEL`, `AI_MONTHLY_BUDGET_USD` | Server (Phase 3) | No (optional) |
+| `ANTHROPIC_API_KEY` | Server only | **Yes** — pay-as-you-go API billing, not part of Claude Pro |
+| `ANTHROPIC_MODEL` | Server | No — default `claude-opus-5-5` |
+| `ANTHROPIC_EFFORT` | Server | No — `low` / `medium` (default) / `high` / `xhigh` / `max` |
+| `AI_MONTHLY_BUDGET_USD` | Server | No — the Companion stops when estimated monthly spend reaches it |
+
+## AI Companion
+
+The Companion chats with you using your real data and can act on it through validated tools.
+
+**Setup:** create an API key at [console.anthropic.com](https://console.anthropic.com) (billed per use, separately from Claude Pro), set a spending limit there, put it in `ANTHROPIC_API_KEY`, and restart. Optionally set `AI_MONTHLY_BUDGET_USD`.
+
+**What it can see:** a fresh snapshot each turn (today's plan, due and overdue tasks, current goals and projects with progress, the latest review, relevant approved memories), plus tools to search tasks, read goal/project details, reviews, behaviour statistics, memories, and past conversations.
+
+**What it can do, and who decides:**
+
+| Risk | Examples | Behaviour |
+|---|---|---|
+| Read | search tasks, read a goal | Always allowed |
+| Memory | propose a memory | Saved as *proposed*; nothing is remembered until you approve it on the Memory page |
+| Low | create a task, change status/priority/due date, link a task, add a milestone, save a first daily review | Waits for approval, unless you enable auto-run in Settings |
+| High | delete a task, change a goal, replace today's plan, overwrite a review | Always waits for approval |
+
+Every proposed or executed change is written to an append-only action log (`/companion/actions`) with the state before the change. The AI is only told an action succeeded when the database confirms it.
+
+**Cost controls:** prompt caching, `medium` effort by default, at most 8 model calls per message, per-request token usage stored, and the monthly budget guard. Estimated spend is shown in Settings.
+
+**API features used:** adaptive thinking with progress updates, server-side refusal fallbacks (`fallbacks: "default"`), and append-only history with `drop_block` so conversations survive system-prompt changes between releases.
 
 ## How it's built (short version)
 
