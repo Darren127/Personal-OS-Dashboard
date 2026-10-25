@@ -22,8 +22,12 @@ already git-ignored, and `.env.example` contains placeholders only.
 
 1. Sign in at [supabase.com](https://supabase.com) → **New project**. Pick the
    region closest to you and save the database password in a password manager.
-2. Apply this repo's schema from your computer (Node.js and the repo needed;
-   Docker is not):
+2. Apply this repo's schema. **Easiest (no terminal):** add three repository
+   secrets on GitHub (Settings → Secrets and variables → Actions →
+   New repository secret): `SUPABASE_ACCESS_TOKEN` (supabase.com → Account →
+   Access Tokens), `SUPABASE_PROJECT_REF` (the code in `https://<ref>.supabase.co`)
+   and `SUPABASE_DB_PASSWORD`. Then Actions → **Set up database** → Run workflow.
+   **Or, from a terminal** (Node.js and the repo needed; Docker is not):
    ```bash
    npx supabase login
    npx supabase link --project-ref <your-project-ref>   # from the project URL
@@ -65,16 +69,16 @@ Signed out, it shows nothing else.
 
 ## 4. Create your login
 
-Sign-up is disabled, so create your one account from your computer with the
-hosted project's values in `.env.local` (`NEXT_PUBLIC_SUPABASE_URL` and
-`SUPABASE_SECRET_KEY`):
+Sign-up is disabled, so create your one account yourself. **Easiest:**
+Supabase dashboard → Authentication → Users → **Add user → Create new user**,
+enter your email and a password (10+ characters), and tick **Auto Confirm User**.
+
+Or from a terminal, with the hosted project's `NEXT_PUBLIC_SUPABASE_URL` and
+`SUPABASE_SECRET_KEY` in `.env.local`:
 
 ```bash
 npm run create-user -- you@example.com   # prompts for a password, min 10 characters
 ```
-
-Then switch `.env.local` back to your local values if you keep developing
-locally, or keep a separate copy of the hosted values in your password manager.
 
 **Verify:** sign in on the deployed site. Settings → "Connections" shows
 Supabase as configured. Visiting `/api/health` while signed in shows which
