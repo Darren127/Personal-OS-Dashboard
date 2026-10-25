@@ -5,7 +5,7 @@
 #
 # Needs three repository secrets (Settings → Secrets and variables → Actions):
 #   SUPABASE_ACCESS_TOKEN  supabase.com → Account → Access Tokens
-#   SUPABASE_PROJECT_REF   the code in your project URL: https://<ref>.supabase.co
+#   SUPABASE_PROJECT_REF   Project Settings → General → Project ID (20 lowercase letters)
 #   SUPABASE_DB_PASSWORD   the database password chosen when creating the project
 name: Set up database
 
@@ -30,6 +30,17 @@ jobs:
           [ -n "$SUPABASE_DB_PASSWORD" ] || missing="$missing SUPABASE_DB_PASSWORD"
           [ -n "$PROJECT_REF" ] || missing="$missing SUPABASE_PROJECT_REF"
           if [ -n "$missing" ]; then echo "::error::Missing repository secrets:$missing"; exit 1; fi
+
+      # Accept the bare ref or anything containing it (a pasted project URL,
+      # extra spaces): a ref is exactly 20 lowercase letters.
+      - name: Read the project ref
+        run: |
+          ref=$(printf '%s' "$PROJECT_REF" | grep -oE '(^|[^a-z])[a-z]{20}([^a-z]|$)' | grep -oE '[a-z]{20}' | head -n1 || true)
+          if [ -z "$ref" ]; then
+            echo "::error::SUPABASE_PROJECT_REF must be your project's ID: exactly 20 lowercase letters. Find it in Supabase → Project Settings → General → Project ID."
+            exit 1
+          fi
+          echo "PROJECT_REF=$ref" >> "$GITHUB_ENV"
 
       - uses: supabase/setup-cli@v1
         with:

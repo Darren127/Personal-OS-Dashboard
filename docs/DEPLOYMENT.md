@@ -25,7 +25,7 @@ already git-ignored, and `.env.example` contains placeholders only.
 2. Apply this repo's schema. **Easiest (no terminal):** add three repository
    secrets on GitHub (Settings → Secrets and variables → Actions →
    New repository secret): `SUPABASE_ACCESS_TOKEN` (supabase.com → Account →
-   Access Tokens), `SUPABASE_PROJECT_REF` (the code in `https://<ref>.supabase.co`)
+   Access Tokens), `SUPABASE_PROJECT_REF` (Project Settings → General → Project ID: 20 lowercase letters)
    and `SUPABASE_DB_PASSWORD`. Then Actions → **Set up database** → Run workflow.
    **Or, from a terminal** (Node.js and the repo needed; Docker is not):
    ```bash
