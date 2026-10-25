@@ -38,6 +38,7 @@ export type CompanionPrefs = {
   workDayStart: string;
   workDayEnd: string;
   displayName: string | null;
+  weekStartsOn: number;
   aiAutoExecuteLowRisk: boolean;
 };
 
@@ -127,7 +128,7 @@ export async function runCompanionTurn(opts: {
   ];
   const messages = [...history, ...turnStart];
 
-  let toolCtx: ToolContext = { supabase, today, timezone: prefs.timezone, conversationId };
+  let toolCtx: ToolContext = { supabase, today, timezone: prefs.timezone, weekStartsOn: prefs.weekStartsOn, conversationId };
 
   async function store(rows: { role: string; content: unknown; text_content?: string; visible: boolean; usage?: Record<string, unknown> }[]) {
     const { data, error } = await supabase.from("conversation_messages").insert(

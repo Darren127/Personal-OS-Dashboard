@@ -137,6 +137,20 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"finding_dismissals": {
+                  Row: {
+                    "created_at": string,"dismissed_until": string,"finding_key": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"dismissed_until": string,"finding_key": string,"user_id"?: string
+                  }
+                  Update: {
+                    "created_at"?: string,"dismissed_until"?: string,"finding_key"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"goal_milestones": {
                   Row: {
                     "completed_at": string | null,"created_at": string,"description": string | null,"due_date": string | null,"goal_id": string,"id": string,"position": number,"title": string,"updated_at": string,"user_id": string
@@ -431,6 +445,20 @@ isOneToOne: false
                   }
                   Update: {
                     "ai_auto_execute_low_risk"?: boolean,"ai_model"?: string | null,"created_at"?: string,"display_name"?: string | null,"timezone"?: string,"updated_at"?: string,"user_id"?: string,"week_starts_on"?: number,"work_day_end"?: string,"work_day_start"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"weekly_reviews": {
+                  Row: {
+                    "ai_summary": string | null,"challenges": string | null,"created_at": string,"id": string,"lessons": string | null,"next_week_focus": string | null,"rating": number | null,"stats": Json | null,"updated_at": string,"user_id": string,"week_start": string,"wins": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "ai_summary"?: string | null,"challenges"?: string | null,"created_at"?: string,"id"?: string,"lessons"?: string | null,"next_week_focus"?: string | null,"rating"?: number | null,"stats"?: Json | null,"updated_at"?: string,"user_id"?: string,"week_start": string,"wins"?: string | null
+                  }
+                  Update: {
+                    "ai_summary"?: string | null,"challenges"?: string | null,"created_at"?: string,"id"?: string,"lessons"?: string | null,"next_week_focus"?: string | null,"rating"?: number | null,"stats"?: Json | null,"updated_at"?: string,"user_id"?: string,"week_start"?: string,"wins"?: string | null
                   }
                   Relationships: [
                     

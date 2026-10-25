@@ -23,14 +23,17 @@ function SetupNeeded() {
 }
 
 async function CompanionContent({ searchParams }: { searchParams: PageProps<"/companion">["searchParams"] }) {
-  const { c, prompt } = await searchParams;
+  const { c, prompt, ask } = await searchParams;
   const conversationId = typeof c === "string" ? c : null;
   const config = getAiConfig();
   const [conversations, current] = await Promise.all([
     listConversations(),
     conversationId ? getConversation(conversationId) : Promise.resolve(null),
   ]);
-  const initialPrompt = typeof prompt === "string" ? QUICK_PROMPTS[prompt]?.text : undefined;
+  // Pre-fill (never auto-send) a ready-made prompt or a question from elsewhere in the app.
+  const initialPrompt =
+    (typeof prompt === "string" ? QUICK_PROMPTS[prompt]?.text : undefined) ??
+    (typeof ask === "string" ? ask.slice(0, 2000) : undefined);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[14rem_1fr]">

@@ -53,3 +53,19 @@ describe("date arithmetic", () => {
     expect(formatRelativeDate("2027-02-01", today)).toBe("1 Feb 2027");
   });
 });
+
+describe("weeks", async () => {
+  const { weekStartOf, formatWeekRange, dayOfWeek } = await import("@/lib/dates");
+  it("finds the start of the week for Monday- and Sunday-start weeks", () => {
+    expect(dayOfWeek("2026-10-25")).toBe(0); // a Sunday
+    expect(weekStartOf("2026-10-25", 1)).toBe("2026-10-19");
+    expect(weekStartOf("2026-10-19", 1)).toBe("2026-10-19");
+    expect(weekStartOf("2026-10-25", 0)).toBe("2026-10-25");
+    expect(weekStartOf("2026-10-24", 0)).toBe("2026-10-18");
+    expect(weekStartOf("2027-01-02", 1)).toBe("2026-12-28");
+  });
+  it("formats a week range", () => {
+    expect(formatWeekRange("2026-10-19")).toBe("19 – 25 Oct 2026");
+    expect(formatWeekRange("2026-10-26")).toBe("26 Oct – 1 Nov 2026");
+  });
+});

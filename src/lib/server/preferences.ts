@@ -10,6 +10,7 @@ export type Preferences = {
   timezone: string;
   workDayStart: string;
   workDayEnd: string;
+  weekStartsOn: number;
   aiAutoExecuteLowRisk: boolean;
 };
 
@@ -18,6 +19,7 @@ const DEFAULTS: Preferences = {
   timezone: "UTC",
   workDayStart: "09:00:00",
   workDayEnd: "17:30:00",
+  weekStartsOn: 1,
   aiAutoExecuteLowRisk: false,
 };
 
@@ -31,6 +33,7 @@ export const getPreferences = cache(async (): Promise<Preferences> => {
     timezone: data.timezone,
     workDayStart: data.work_day_start,
     workDayEnd: data.work_day_end,
+    weekStartsOn: data.week_starts_on,
     aiAutoExecuteLowRisk: data.ai_auto_execute_low_risk,
   };
 });

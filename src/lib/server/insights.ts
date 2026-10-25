@@ -10,24 +10,41 @@ import type { Db } from "@/lib/supabase/server";
  * evidence, and they're the building blocks for future proactive checks.
  */
 export async function getBehaviorInsights(supabase: Db, today: string, timezone: string, days: number) {
-  const startDate = addDays(today, -days);
+  return getPeriodStats(supabase, { from: addDays(today, -days), to: today, today }, timezone);
+}
+
+/**
+ * The same statistics for an explicit period (inclusive dates), e.g. one
+ * calendar week. Counts that describe "now" (open overdue tasks, repeatedly
+ * rescheduled open tasks) are as of `today`.
+ */
+export async function getPeriodStats(
+  supabase: Db,
+  period: { from: string; to: string; today: string },
+  timezone: string,
+) {
+  const { today } = period;
+  const startDate = period.from;
+  const endDate = period.to;
+  const days = Math.round((Date.parse(endDate) - Date.parse(startDate)) / 86_400_000);
   const startIso = zonedLocalToUtcIso(`${startDate}T00:00`, timezone);
+  const endIso = zonedLocalToUtcIso(`${addDays(endDate, 1)}T00:00`, timezone);
 
   const [created, completed, overdue, rescheduled, plans, reviews, goals, goalMilestones] = await Promise.all([
-    supabase.from("tasks").select("id", { count: "exact", head: true }).gte("created_at", startIso),
+    supabase.from("tasks").select("id", { count: "exact", head: true }).gte("created_at", startIso).lt("created_at", endIso),
     supabase.from("tasks").select("id, title, goal_id, estimated_minutes, actual_minutes, completed_at")
-      .gte("completed_at", startIso).limit(1000),
+      .gte("completed_at", startIso).lt("completed_at", endIso).limit(1000),
     supabase.from("tasks").select("id", { count: "exact", head: true })
       .lt("due_date", today).in("status", OPEN_TASK_STATUSES),
     supabase.from("tasks").select("id, title, reschedule_count, due_date, status")
       .gte("reschedule_count", 2).in("status", OPEN_TASK_STATUSES)
       .order("reschedule_count", { ascending: false }).limit(10),
     supabase.from("daily_plans").select("plan_date, items:daily_plan_items(priority_rank, outcome, task_id)")
-      .gte("plan_date", startDate).lte("plan_date", today),
+      .gte("plan_date", startDate).lte("plan_date", endDate),
     supabase.from("daily_reviews").select("review_date, energy, mood, challenges")
-      .gte("review_date", startDate).order("review_date", { ascending: false }),
+      .gte("review_date", startDate).lte("review_date", endDate).order("review_date", { ascending: false }),
     supabase.from("goals").select("id, title, status, target_date").eq("status", "active"),
-    supabase.from("goal_milestones").select("goal_id").gte("completed_at", startIso),
+    supabase.from("goal_milestones").select("goal_id").gte("completed_at", startIso).lt("completed_at", endIso),
   ]);
   for (const r of [created, completed, overdue, rescheduled, plans, reviews, goals, goalMilestones]) {
     if (r.error) throw new Error(`Failed to compute insights: ${r.error.message}`);
@@ -74,7 +91,7 @@ export async function getBehaviorInsights(supabase: Db, today: string, timezone:
   };
 
   return {
-    window: { from: startDate, to: today, days },
+    window: { from: startDate, to: endDate, days },
     tasks: {
       created: created.count ?? 0,
       completed: completed.data!.length,

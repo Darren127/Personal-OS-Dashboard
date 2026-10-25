@@ -13,12 +13,14 @@ export function PreferencesForm({
   timezone,
   workDayStart,
   workDayEnd,
+  weekStartsOn,
   timezones,
 }: {
   displayName: string | null;
   timezone: string;
   workDayStart: string;
   workDayEnd: string;
+  weekStartsOn: number;
   timezones: string[];
 }) {
   const { pending, onSubmit, fieldErrors: e } = useFormAction(savePreferences);
@@ -40,6 +42,12 @@ export function PreferencesForm({
       <FormField id="pref-end" label="Working day ends" error={e.work_day_end}
         hint="Used to warn you when today's plan doesn't fit.">
         <Input id="pref-end" name="work_day_end" type="time" defaultValue={workDayEnd.slice(0, 5)} {...errorProps("pref-end", e.work_day_end)} />
+      </FormField>
+      <FormField id="pref-week" label="Week starts on" hint="Used for weekly reviews.">
+        <NativeSelect id="pref-week" name="week_starts_on" defaultValue={weekStartsOn}>
+          <option value={1}>Monday</option>
+          <option value={0}>Sunday</option>
+        </NativeSelect>
       </FormField>
       <div className="sm:col-span-2">
         <Button type="submit" disabled={pending}>

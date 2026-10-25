@@ -15,7 +15,7 @@ export const QUICK_PROMPTS: Record<string, { label: string; text: string }> = {
   },
   weekly: {
     label: "Weekly review",
-    text: "Let's do my weekly review. Look at the last 7 days: what I planned versus what happened, progress on my goals and projects, patterns worth noticing, and what I should change next week. Be honest.",
+    text: "Let's do my weekly review. Look at the last 7 days: what I planned versus what happened, progress on my goals and projects, patterns worth noticing, and what I should change next week. Be honest. When we're done, offer to save a short summary as my weekly review.",
   },
   monthly: {
     label: "Monthly review",

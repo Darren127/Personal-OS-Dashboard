@@ -144,3 +144,22 @@ export function utcIsoToZonedLocal(iso: string, timezone: string): string {
 export function formatClockTime(iso: string, timezone: string) {
   return utcIsoToZonedLocal(iso, timezone).slice(11, 16);
 }
+
+/** Day of week for a YYYY-MM-DD date: 0 = Sunday … 6 = Saturday. */
+export function dayOfWeek(date: string) {
+  return new Date(`${date}T00:00:00Z`).getUTCDay();
+}
+
+/** First day of the week containing `date`, for a week starting on `weekStartsOn` (0 = Sunday, 1 = Monday). */
+export function weekStartOf(date: string, weekStartsOn: number) {
+  return addDays(date, -((dayOfWeek(date) - weekStartsOn + 7) % 7));
+}
+
+/** "19 – 25 Oct 2026" */
+export function formatWeekRange(start: string) {
+  const end = addDays(start, 6);
+  const fmt = (d: string, opts: Intl.DateTimeFormatOptions) =>
+    new Intl.DateTimeFormat("en-GB", { ...opts, timeZone: "UTC" }).format(new Date(`${d}T00:00:00Z`));
+  const sameMonth = start.slice(0, 7) === end.slice(0, 7);
+  return `${fmt(start, sameMonth ? { day: "numeric" } : { day: "numeric", month: "short" })} – ${fmt(end, { day: "numeric", month: "short", year: "numeric" })}`;
+}

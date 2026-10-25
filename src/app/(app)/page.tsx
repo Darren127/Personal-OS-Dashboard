@@ -14,6 +14,7 @@ import {
   Target,
 } from "lucide-react";
 
+import { FindingsList } from "@/components/findings-list";
 import { DailyNotes, DailyReview } from "@/components/my-day/day-forms";
 import { DueTodayList, OverdueList, Priorities } from "@/components/my-day/my-day-lists";
 import { Schedule } from "@/components/my-day/schedule";
@@ -23,9 +24,11 @@ import { TaskDialogProvider } from "@/components/tasks/task-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { formatLongDate, formatMinutes, formatRelativeDate, hourIn } from "@/lib/dates";
+import { getFindings } from "@/lib/server/findings";
 import { getMyDay, type Deadline } from "@/lib/server/my-day";
 import { getPreferences, getToday } from "@/lib/server/preferences";
 import { getLinkOptions } from "@/lib/server/tasks";
+import { requireUser } from "@/lib/supabase/server";
 
 function Section({
   icon: Icon,
@@ -63,7 +66,8 @@ const DEADLINE_ICON: Record<Deadline["kind"], React.ComponentType<{ className?: 
 
 async function MyDayContent() {
   const [today, prefs, options] = await Promise.all([getToday(), getPreferences(), getLinkOptions()]);
-  const day = await getMyDay(today);
+  const { supabase } = await requireUser();
+  const [day, { findings }] = await Promise.all([getMyDay(today), getFindings(supabase, today, prefs)]);
   const hour = hourIn(prefs.timezone);
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
   const pct = day.progress.total ? Math.round((100 * day.progress.done) / day.progress.total) : null;
@@ -101,6 +105,20 @@ async function MyDayContent() {
         </div>
 
         <QuickAdd dueTodayDefault placeholder="Add a task for today…" />
+
+        {findings.length > 0 && (
+          <section aria-labelledby="worth-a-look" className="space-y-3">
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 id="worth-a-look" className="text-sm font-semibold">Worth a look</h2>
+              {findings.length > 3 && (
+                <Link href="/reviews/patterns" className="text-xs text-primary hover:underline">
+                  See all {findings.length}
+                </Link>
+              )}
+            </div>
+            <FindingsList findings={findings.slice(0, 3)} />
+          </section>
+        )}
 
         <div className="grid gap-6 lg:grid-cols-5">
           <div className="min-w-0 space-y-6 lg:col-span-3">

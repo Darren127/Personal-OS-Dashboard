@@ -2,7 +2,7 @@
 
 An AI-assisted personal command centre: **My Day**, **Tasks**, **Life Goals**, **Projects**, and (from Phase 3) an **AI Companion**, all on one shared database.
 
-Status: **Phase 3 complete** (AI Companion built; live-AI verification pending an API key). See [`docs/PROGRESS.md`](docs/PROGRESS.md), the data model in [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md), and the proactive-features design in [`docs/PROACTIVE.md`](docs/PROACTIVE.md).
+Status: **Phase 4 complete** (live-AI verification still pending an API key). See [`docs/PROGRESS.md`](docs/PROGRESS.md), the data model in [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md), and the proactive-features design in [`docs/PROACTIVE.md`](docs/PROACTIVE.md).
 
 ## Tech stack
 

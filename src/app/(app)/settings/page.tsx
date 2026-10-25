@@ -141,6 +141,7 @@ async function Preferences() {
           timezone={prefs.timezone}
           workDayStart={prefs.workDayStart}
           workDayEnd={prefs.workDayEnd}
+          weekStartsOn={prefs.weekStartsOn}
           timezones={Intl.supportedValuesOf("timeZone")}
         />
       </CardContent>

@@ -36,3 +36,8 @@ user_preferences (timezone, working hours, AI permissions)
 - **`ai_action_logs`** is an audit trail: no deletes; only outcome columns can be updated, and status can only move forward (proposed → approved/rejected; approved → executed/failed).
 - **`memories`**: `created_by` is `user` or `ai`; an AI-created memory must start as `proposed`.
 - **`ai_usage_monthly`** (view): tokens per model per month, for the spending guard.
+
+## Reviews and patterns
+
+- **`weekly_reviews`** — one per user per week (`week_start` follows the user's week-start setting): reflection fields, 1–5 rating, an optional AI summary, and `stats`, a snapshot of the week's numbers when it was saved.
+- **`finding_dismissals`** — pattern findings are computed on the fly, never stored; this table only records which finding keys the user hid and until when. Keys change when the situation changes, so a hidden finding returns if things get worse.

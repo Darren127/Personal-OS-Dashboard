@@ -2,6 +2,7 @@ import "server-only";
 
 import { addDays, daysBetween, formatClockTime, formatLongDate, formatTime } from "@/lib/dates";
 import { GOAL_CATEGORY_LABEL, GOAL_HORIZON_LABEL, OPEN_TASK_STATUSES, PROJECT_STATUS_LABEL } from "@/lib/domain";
+import { getFindings } from "@/lib/server/findings";
 import { describeProgress } from "@/lib/server/goals";
 import { describeProjectProgress } from "@/lib/server/projects";
 import type { Db } from "@/lib/supabase/server";
@@ -49,7 +50,7 @@ export async function buildTurnContext(
   const { today, prefs } = opts;
   const week = addDays(today, 7);
 
-  const [plan, dueToday, overdue, upcoming, goals, goalProgress, projects, projectProgress, review, pendingMemories, memories, actionUpdates, pendingActions] =
+  const [plan, dueToday, overdue, upcoming, goals, goalProgress, projects, projectProgress, review, pendingMemories, memories, actionUpdates, pendingActions, patterns] =
     await Promise.all([
       supabase.from("daily_plans").select("intention, items:daily_plan_items(priority_rank, start_time, end_time, title, task:tasks(id, title, status))")
         .eq("plan_date", today).maybeSingle(),
@@ -75,6 +76,7 @@ export async function buildTurnContext(
         : Promise.resolve({ data: [], error: null }),
       supabase.from("ai_action_logs").select("id, summary").eq("status", "proposed")
         .order("created_at", { ascending: false }).limit(10),
+      getFindings(supabase, today, prefs),
     ]);
   for (const r of [plan, dueToday, overdue, upcoming, goals, goalProgress, projects, projectProgress, review, pendingMemories, actionUpdates, pendingActions]) {
     if (r.error) throw new Error(`Failed to build context: ${r.error.message}`);
@@ -131,6 +133,11 @@ export async function buildTurnContext(
       if (v) L.push(`${k}: ${v.slice(0, 400)}`);
     }
     if (r.energy || r.mood) L.push(`Energy ${r.energy ?? "–"}/5, mood ${r.mood ?? "–"}/5`);
+  }
+
+  if (patterns.findings.length) {
+    L.push("", "## Patterns worth a look (computed from their data; the user sees these on My Day)");
+    for (const f of patterns.findings.slice(0, 6)) L.push(`- [${f.severity}] ${f.title}. ${f.evidence}`);
   }
 
   L.push("", "## Saved memories");

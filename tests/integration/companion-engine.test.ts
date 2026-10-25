@@ -70,15 +70,16 @@ const text = (t: string) => ({ type: "text", text: t, citations: null });
 const thinking = (sig: string) => ({ type: "thinking", thinking: "", signature: sig });
 const toolUse = (id: string, name: string, input: Record<string, unknown>) => ({ type: "tool_use", id, name, input });
 
+const NOW = new Date("2026-10-25T03:00:00Z"); // a Sunday morning in Singapore
 const config: AiConfig = { configured: true, apiKey: "test", model: "claude-opus-5-5", effort: "medium", monthlyBudgetUsd: null };
-const prefs: CompanionPrefs = { timezone: "Asia/Singapore", workDayStart: "09:00:00", workDayEnd: "17:30:00", displayName: "Tester", aiAutoExecuteLowRisk: false };
+const prefs: CompanionPrefs = { timezone: "Asia/Singapore", workDayStart: "09:00:00", workDayEnd: "17:30:00", displayName: "Tester", weekStartsOn: 1, aiAutoExecuteLowRisk: false };
 
 let supabase: SupabaseClient<Database>;
 let admin: SupabaseClient<Database>;
 let userId: string;
 let db: Db;
 
-async function run(opts: { conversationId?: string | null; text: string; model: ReturnType<typeof scriptedModel>; prefs?: Partial<CompanionPrefs>; config?: Partial<AiConfig> }) {
+async function run(opts: { conversationId?: string | null; text: string; model: ReturnType<typeof scriptedModel>; prefs?: Partial<CompanionPrefs>; config?: Partial<AiConfig>; now?: Date }) {
   const events: ChatEvent[] = [];
   await runCompanionTurn({
     supabase: db,
@@ -88,6 +89,7 @@ async function run(opts: { conversationId?: string | null; text: string; model: 
     conversationId: opts.conversationId ?? null,
     userText: opts.text,
     emit: (e) => events.push(e),
+    now: opts.now ?? NOW, // fixed clock so date-based results don't change from week to week
   });
   const conv = events.find((e) => e.type === "conversation") as Extract<ChatEvent, { type: "conversation" }> | undefined;
   return { events, conversationId: conv?.id ?? opts.conversationId ?? null };
@@ -112,6 +114,7 @@ describe.skipIf(!reachable)("Companion engine (scripted model, real database)", 
     // Fresh slate for this test user only (RLS scopes every delete to them).
     // The action log is append-only for users, so clean it with the admin key.
     await admin.from("ai_action_logs").delete().eq("user_id", userId);
+    await admin.from("weekly_reviews").delete().eq("user_id", userId);
     await supabase.from("conversations").delete().not("id", "is", null);
     await supabase.from("tasks").delete().not("id", "is", null);
     await supabase.from("memories").delete().not("id", "is", null);
@@ -175,7 +178,7 @@ describe.skipIf(!reachable)("Companion engine (scripted model, real database)", 
     const { conversationId } = await run({ text: "Remind me to book flights", model });
     const log = (await supabase.from("ai_action_logs").select("id").eq("status", "proposed").single()).data!;
 
-    const ctx = { supabase: db, today: "2026-10-25", timezone: prefs.timezone };
+    const ctx = { supabase: db, today: "2026-10-25", timezone: prefs.timezone, weekStartsOn: 1 };
     expect(await approveQueuedAction(db, log.id, ctx)).toEqual({ ok: true });
     expect(await approveQueuedAction(db, log.id, ctx)).toMatchObject({ ok: false }); // no double-run
     const tasks = (await supabase.from("tasks").select("id, title, due_date")).data!;
@@ -200,7 +203,7 @@ describe.skipIf(!reachable)("Companion engine (scripted model, real database)", 
     await run({ text: "x", model });
     const log = (await supabase.from("ai_action_logs").select("id").eq("status", "proposed").single()).data!;
     expect(await rejectQueuedAction(db, log.id)).toEqual({ ok: true });
-    expect(await approveQueuedAction(db, log.id, { supabase: db, today: "2026-10-25", timezone: "UTC" })).toMatchObject({ ok: false });
+    expect(await approveQueuedAction(db, log.id, { supabase: db, today: "2026-10-25", timezone: "UTC", weekStartsOn: 1 })).toMatchObject({ ok: false });
     expect((await supabase.from("tasks").select("id")).data).toHaveLength(0);
   });
 
@@ -288,6 +291,25 @@ describe.skipIf(!reachable)("Companion engine (scripted model, real database)", 
     await supabase.from("goals").delete().eq("id", goal.id);
   });
 
+  it("saves a weekly review, but asks before replacing an existing one", async () => {
+    const model = scriptedModel([
+      () => ({ content: [toolUse("w1", "record_weekly_review", { summary: "Planned 12 tasks, finished 7. Mornings worked; afternoons didn't.", next_week_focus: "Protect mornings" })] }),
+      () => ({ content: [text("Saved.")] }),
+      () => ({ content: [toolUse("w2", "record_weekly_review", { summary: "Rewritten summary" })] }),
+      () => ({ content: [text("Queued.")] }),
+    ]);
+    const { conversationId } = await run({ text: "Weekly review please", model, prefs: { aiAutoExecuteLowRisk: true } });
+    const saved = (await supabase.from("weekly_reviews").select("week_start, ai_summary, next_week_focus, stats").single()).data!;
+    expect(saved).toMatchObject({ week_start: "2026-10-19", next_week_focus: "Protect mornings" });
+    expect(saved.ai_summary).toContain("finished 7");
+    expect(saved.stats).toMatchObject({ window: { from: "2026-10-19", to: "2026-10-25" } });
+
+    await run({ conversationId, text: "Redo it", model, prefs: { aiAutoExecuteLowRisk: true } });
+    const logs = (await supabase.from("ai_action_logs").select("tool_name, status, risk_level").order("created_at")).data!;
+    expect(logs.map((l) => [l.status, l.risk_level])).toEqual([["executed", "low"], ["proposed", "high"]]);
+    expect((await supabase.from("weekly_reviews").select("ai_summary").single()).data!.ai_summary).toContain("finished 7");
+  });
+
   it("stores nothing when the first request fails", async () => {
     const model = scriptedModel([() => new Error("network down")]);
     const { events, conversationId } = await run({ text: "Hello?", model });
@@ -298,9 +320,10 @@ describe.skipIf(!reachable)("Companion engine (scripted model, real database)", 
 
   it("refuses to call the model once the monthly budget is used up", async () => {
     const model = scriptedModel([() => ({ content: [text("hi")] })]);
-    await run({ text: "first", model });
+    // Usage is stamped with the database's real clock, so use real time here.
+    await run({ text: "first", model, now: new Date() });
     const blocked = scriptedModel([() => ({ content: [text("should not run")] })]);
-    const { events } = await run({ text: "second", model: blocked, config: { monthlyBudgetUsd: 0.001 } });
+    const { events } = await run({ text: "second", model: blocked, config: { monthlyBudgetUsd: 0.001 }, now: new Date() });
     expect(blocked.requests).toHaveLength(0);
     expect(events.find((e) => e.type === "notice")).toMatchObject({ level: "error" });
   });

@@ -1,5 +1,22 @@
 # Progress log
 
+## Phase 4 — Reviews and adaptive planning ✅ (2026-10-25)
+
+**Implemented**
+- **Pattern detection ("Worth a look")** — exact, free rules over your data (no AI): today over capacity, tasks overdue 2+ days, tasks pushed back 3+ times, top priorities missed on 2+ reviewed days, a low top-priority completion rate (only with 5+ reviewed priorities — one miss is never a pattern), goals with no progress in 14 days (new goals get two weeks), projects blocked 7+ days, and planning without reviewing. Each finding shows its evidence and one-click responses. Shown on My Day (top 3) and Reviews → Patterns (all).
+- **Schedule adjustment** — when today is over capacity, a concrete plan to move the lowest-priority tasks to tomorrow (never top-3 priorities, in-progress, or critical tasks), with an honest note if it still won't fit. One click applies it.
+- **Dismiss / snooze** — hide until tomorrow, for a week, or until the situation changes (a task pushed back again reappears).
+- **Weekly reviews** — Reviews → Weekly: the week's numbers (tasks done, top priorities done, planned/reviewed days, energy and mood, outcomes, estimate accuracy, goal progress, stalled goals, repeatedly postponed tasks), that week's daily reviews, your reflection with a 1–5 rating, history, previous/next week. A statistics snapshot is saved with each review.
+- **AI integration** — the Companion sees current findings in its context; new `record_weekly_review` tool (needs approval to replace existing text); "Ask AI" buttons on findings open the Companion with the question pre-filled (never auto-sent).
+- **Settings** — week starts on Monday or Sunday.
+- **Scheduled reminders** — not built: no scheduler or notification service is configured. The design is in `docs/PROACTIVE.md`; the detectors are the part a scheduler would run.
+
+**Verified**
+- `npm run db:test`: 50/50 (7 new).
+- `npm test`: 57/57 — unit tests for every detector rule and the adjustment planner, week helpers; integration tests for findings and dismissals against the real database, and for the weekly-review AI tool (now on a fixed clock so results don't depend on the current date).
+- Browser tests: Worth a look, applying an adjustment (verified in the database), Patterns, hiding, Ask-AI pre-fill, weekly review save/history/navigation, week-start setting, mobile layout; full regression of Tasks, My Day, Goals, Projects, Companion (via the test-only mock API), Settings, and second-user isolation: all pass.
+- Type check, lint, production build: pass.
+
 ## Phase 3 — AI Companion ✅ built · ⏳ live-AI check pending an API key (2026-10-25)
 
 **Implemented**
@@ -68,5 +85,5 @@ Next.js 16 + TypeScript + Tailwind 4 app shell, theming, navigation, env validat
 - Invalid record URLs show a "Not found" message but return HTTP 200 (streaming limitation).
 - Playwright scripts used for verification are not yet part of the repo's automated suite (Phase 5).
 
-## Next: Phase 4 — Reviews and adaptive planning
-Weekly review page with stored summaries, plan-failure detection surfaced on My Day ("worth a look"), schedule-adjustment suggestions, and optional scheduled runs once a scheduler is configured (see `docs/PROACTIVE.md`).
+## Next: Phase 5 — Quality and deployment readiness
+Move the browser checks into a repeatable Playwright suite, accessibility pass, security review of policies and server actions, error monitoring, and a deployment guide (Vercel + hosted Supabase) — plus the live-AI check once an API key is available.

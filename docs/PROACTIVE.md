@@ -1,6 +1,6 @@
 # Proactive AI — design
 
-**Status:** foundations built; nothing runs on a schedule yet. Personal OS cannot contact you on its own: no scheduler or notification service is connected. Every review today is started by you.
+**Status:** detection is built and shown in the app (My Day → "Worth a look", Reviews → Patterns); nothing runs on a schedule yet. Personal OS cannot contact you on its own: no scheduler or notification service is connected. Every review today is started by you.
 
 ## What exists now
 
@@ -13,18 +13,22 @@
 | AI tools | `get_behavior_insights`, `get_reviews` | Let the Companion cite the statistics above as evidence. |
 | Conversation kinds | `conversations.kind` | Already allows `daily_review`, `weekly_review`, `monthly_review` for scheduled runs. |
 
-## Planned checks
+## Checks (built)
 
-Each check is a pure function `(supabase, today, timezone) → Finding[]`, built on `insights.ts`. A finding has a type, severity, the evidence (IDs and counts), and a suggested prompt for the Companion.
+`src/lib/findings.ts` holds pure detector functions; `src/lib/server/findings.ts` gathers their input and removes dismissed findings. A finding has a stable key, severity, title, evidence, and suggested actions.
 
-| Check | Trigger (proposed defaults) |
+| Check | Rule |
 |---|---|
-| Daily planning reminder | Workday morning, no plan or top priorities set for today |
+| Overload | Today's estimated open work > working hours minus fixed blocks; includes a move-to-tomorrow plan |
 | Overdue follow-up | Open tasks overdue ≥ 2 days |
-| Repeated plan failure | Task pushed later ≥ 3 times, or top priority skipped ≥ 3 of the last 5 planned days |
-| Overload | Today's estimated work > available working time |
-| Goal stall | Active goal with no completed task or milestone in 14 days |
-| Weekly summary | Sunday evening (user's timezone) |
+| Repeated postponement | Task pushed later ≥ 3 times |
+| Failed priority | Same task a top priority on ≥ 2 reviewed days without being done |
+| Low priority completion | < 40% of ≥ 5 reviewed top priorities done in 14 days |
+| Goal stall | Active goal (≥ 14 days old) with no completed task or milestone in 14 days |
+| Blocked project | Unresolved blocker ≥ 7 days old |
+| Missing reviews | ≥ 3 planned days in a week, ≤ 1 reviewed |
+
+Still to add when a scheduler exists: a morning planning reminder and a weekly summary prompt.
 
 Checks are free (database only). Only turning a finding into an AI-written message costs API tokens, so findings should be batched into one Companion run per day at most, and respect `AI_MONTHLY_BUDGET_USD`.
 
@@ -34,7 +38,7 @@ Checks are free (database only). Only turning a finding into an AI-written messa
    - Vercel Cron calling a protected route (e.g. `POST /api/jobs/daily`, authorised with a secret in an environment variable), or
    - Supabase `pg_cron` + an Edge Function.
    The job runs per user, signed in as a service identity that **only** reads that user's data and writes findings, never other actions.
-2. **A place for findings** — a `proactive_findings` table (user_id, type, evidence jsonb, status: new/seen/dismissed, created_at), shown on My Day as "Worth a look".
+2. **Delivery** — findings are already computed on demand and dismissals stored (`finding_dismissals`); a scheduled job would compute them per user and send a digest of new, undismissed ones.
 3. **Optional notifications** — email (e.g. Resend) or web push. Each needs explicit opt-in in Settings, a separate setup step, and possibly a paid service.
 4. **Settings** — per-check on/off, quiet hours, and a daily AI-run limit.
 

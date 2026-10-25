@@ -19,6 +19,7 @@ export async function approveAction(id: string): Promise<ActionResult> {
     supabase,
     today: todayIn(prefs.timezone),
     timezone: prefs.timezone,
+    weekStartsOn: prefs.weekStartsOn,
   });
   refresh();
   return result.ok ? { ok: true, message: "Approved and done." } : { ok: false, error: result.error };

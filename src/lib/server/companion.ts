@@ -15,6 +15,7 @@ export async function loadCompanionPrefs(supabase: Db): Promise<CompanionPrefs> 
     workDayStart: data?.work_day_start ?? "09:00:00",
     workDayEnd: data?.work_day_end ?? "17:30:00",
     displayName: data?.display_name ?? null,
+    weekStartsOn: data?.week_starts_on ?? 1,
     aiAutoExecuteLowRisk: data?.ai_auto_execute_low_risk ?? false,
   };
 }

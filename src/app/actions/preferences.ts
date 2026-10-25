@@ -15,6 +15,7 @@ const preferencesSchema = z
     timezone: z.string().refine(isValidTimezone, "Choose a valid timezone."),
     work_day_start: time,
     work_day_end: time,
+    week_starts_on: z.coerce.number().int().refine((d) => d === 0 || d === 1, "Choose Monday or Sunday."),
   })
   .refine((p) => p.work_day_end > p.work_day_start, {
     message: "The working day must end after it starts.",
@@ -32,6 +33,7 @@ export async function savePreferences(_prev: ActionResult, formData: FormData): 
       timezone: parsed.data.timezone,
       work_day_start: parsed.data.work_day_start,
       work_day_end: parsed.data.work_day_end,
+      week_starts_on: parsed.data.week_starts_on,
     },
     { onConflict: "user_id" },
   );

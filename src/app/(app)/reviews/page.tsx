@@ -1,18 +1,16 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { NotebookPen, Sparkles } from "lucide-react";
+import { NotebookPen } from "lucide-react";
 
 import { EmptyState } from "@/components/empty-state";
-import { PageHeader } from "@/components/page-header";
 import { ListSkeleton } from "@/components/skeletons";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatLongDate } from "@/lib/dates";
 import { requireUser } from "@/lib/supabase/server";
 
-export const metadata: Metadata = { title: "Reviews" };
+export const metadata: Metadata = { title: "Daily reviews" };
 
 async function ReviewHistory() {
   const { supabase } = await requireUser();
@@ -86,24 +84,8 @@ async function ReviewHistory() {
 
 export default function ReviewsPage() {
   return (
-    <>
-      <PageHeader
-        title="Reviews"
-        description="Your daily reviews and how each planned day actually went."
-        actions={
-          <div className="flex flex-wrap gap-2">
-            <Button asChild variant="outline">
-              <Link href="/companion?prompt=weekly"><Sparkles /> Weekly review</Link>
-            </Button>
-            <Button asChild variant="outline">
-              <Link href="/companion?prompt=monthly"><Sparkles /> Monthly review</Link>
-            </Button>
-          </div>
-        }
-      />
-      <Suspense fallback={<ListSkeleton rows={6} />}>
-        <ReviewHistory />
-      </Suspense>
-    </>
+    <Suspense fallback={<ListSkeleton rows={6} />}>
+      <ReviewHistory />
+    </Suspense>
   );
 }

@@ -2,7 +2,7 @@ import "server-only";
 
 import { z } from "zod";
 
-import { addDays } from "@/lib/dates";
+import { addDays, weekStartOf } from "@/lib/dates";
 import {
   GOAL_HORIZONS,
   GOAL_STATUSES,
@@ -16,6 +16,7 @@ import { getBehaviorInsights } from "@/lib/server/insights";
 import { ensurePlan, saveReviewWithOutcomes } from "@/lib/server/plans";
 import { describeProjectProgress } from "@/lib/server/projects";
 import { TASK_SELECT } from "@/lib/server/tasks";
+import { upsertWeeklyReview } from "@/lib/server/weekly";
 import type { Database } from "@/lib/supabase/database.types";
 import type { Db } from "@/lib/supabase/server";
 
@@ -39,6 +40,7 @@ export type ToolContext = {
   supabase: Db;
   today: string;
   timezone: string;
+  weekStartsOn: number;
   conversationId: string | null;
 };
 
@@ -478,6 +480,38 @@ const recordDailyReview = tool({
   },
 });
 
+const recordWeeklyReview = tool({
+  name: "record_weekly_review",
+  description:
+    "Save a weekly review after discussing the week with the user. Put your honest summary in `summary` (what happened vs. what was planned, patterns, what to change). Only fill wins/challenges/lessons/next_week_focus with things the user said or agreed with. Defaults to the current week. Replacing text the user already wrote needs approval.",
+  schema: z.object({
+    week_start: date.optional().describe("First day of the week; omit for the current week"),
+    summary: z.string().trim().min(1).max(10000),
+    wins: z.string().max(5000).optional(),
+    challenges: z.string().max(5000).optional(),
+    lessons: z.string().max(5000).optional(),
+    next_week_focus: z.string().max(2000).optional(),
+  }),
+  async risk(i, { supabase, today, weekStartsOn }) {
+    const week = i.week_start ?? weekStartOf(today, weekStartsOn);
+    const { data } = await supabase.from("weekly_reviews").select("wins, challenges, lessons, next_week_focus, ai_summary").eq("week_start", week).maybeSingle();
+    const overwrites = data && (["wins", "challenges", "lessons", "next_week_focus"] as const).some((k) => i[k] && data[k]);
+    return overwrites || data?.ai_summary ? "high" : "low";
+  },
+  summarize: (i, { today, weekStartsOn }) => `Save the weekly review for the week of ${i.week_start ?? weekStartOf(today, weekStartsOn)}`,
+  async execute(i, { supabase, today, timezone, weekStartsOn }) {
+    const week = i.week_start ?? weekStartOf(today, weekStartsOn);
+    if (weekStartOf(week, weekStartsOn) !== week) return fail(`${week} isn't the first day of a week.`);
+    if (week > today) return fail("That week hasn't started yet.");
+    const before = await supabase.from("weekly_reviews").select("wins, challenges, lessons, next_week_focus, ai_summary").eq("week_start", week).maybeSingle();
+    const fields: Record<string, string> = { ai_summary: i.summary };
+    for (const k of ["wins", "challenges", "lessons", "next_week_focus"] as const) if (i[k]) fields[k] = i[k]!;
+    const { data, error } = await upsertWeeklyReview(supabase, week, today, timezone, fields);
+    if (error) return fail(error.message);
+    return { ok: true, result: { week_start: week, saved: true }, entity: { type: "weekly_review", id: data.id }, before: before.data };
+  },
+});
+
 const proposeMemory = tool({
   name: "propose_memory",
   description: "Propose a durable memory for the user to review (they approve, edit, or reject it on the Memory page). Use sparingly: stable preferences, working style, recurring obstacles with evidence, important decisions, lessons. Use confidence 'hypothesis' for anything inferred rather than stated.",
@@ -573,6 +607,7 @@ export const TOOLS: AnyTool[] = [
   addMilestone,
   draftSchedule,
   recordDailyReview,
+  recordWeeklyReview,
   proposeMemory,
   updateGoal,
   deleteTask,
