@@ -1,5 +1,25 @@
 # Progress log
 
+## Phase 5 — Quality and deployment readiness ✅ (2026-10-25)
+
+**Implemented**
+- **Repeatable browser test suite** (`npm run test:e2e`, Playwright, 43 tests): sign-in/out and 401s for signed-out API calls; Tasks; My Day (capacity, priorities, overdue, time blocks, notes, end-of-day review, one-click overload fix); Goals and Projects (metric and milestone progress, links, blockers, next action, delete keeps tasks); Reviews (patterns, hiding, weekly review); the AI Companion through the real SDK and streaming UI, answered by a test-only mock API (approve/reject, memory proposals, auto-run setting); a second user can't see the first user's data; no sideways scrolling at phone width; the mobile menu. Tests use dedicated test logins and reset only their data.
+- **Accessibility**: an axe-core WCAG 2.1 AA scan of all 12 pages in light and dark mode, plus a keyboard-only test. Fixed: amber, green and red text was too faint in light mode (contrast 2.5–4.1 → now ≥ 4.5:1); added a "Skip to main content" link.
+- **Security hardening**: security headers on every response (no framing, no MIME sniffing, strict referrer, camera/mic/location off, HSTS; `X-Powered-By` removed); `/api/health` now shows configuration details only to a signed-in user; a last-resort error page that never shows error details.
+- **Deployment**: `docs/DEPLOYMENT.md` (Vercel + hosted Supabase, step by step, with a "Verify" check after each step and a security checklist); GitHub Actions CI (`.github/workflows/ci.yml`) running lint, type check, database, unit, integration and browser tests against a throwaway local Supabase — no secrets needed.
+
+**Security review (what was checked)**
+- All 42 data-changing server actions verify the signed-in user (the other two are sign-in and sign-out); all inputs are validated (Zod, or strict ID/boolean checks).
+- All 19 tables have Row Level Security on; the anonymous role has no table access; no database function runs with elevated privileges, and all fix their `search_path`. `supabase db lint`: no issues.
+- No secret value appears in any page or script sent to the browser (automated test), in the built static files, or in git-tracked files. `.env*` is git-ignored except `.env.example` (placeholders only).
+- `npm audit`: 0 vulnerabilities.
+
+**Verified**
+- `npm run lint`, `npm run typecheck`, production build: pass.
+- `npm test`: 57/57. `npm run db:test`: 50/50.
+- `npm run test:e2e`: 43/43, run twice in a row with the same result.
+- **Not verified:** the CI workflow hasn't run on GitHub yet (the code isn't pushed); no real deployment has been done (supabase.com and Vercel are unreachable from this environment); live Claude responses (no API key).
+
 ## Phase 4 — Reviews and adaptive planning ✅ (2026-10-25)
 
 **Implemented**
@@ -83,7 +103,12 @@ Next.js 16 + TypeScript + Tailwind 4 app shell, theming, navigation, env validat
 - Goal/goal-milestone links on tasks aren't cross-checked (a task can link to goal A and a milestone of goal B — the milestone wins and overwrites the goal). Acceptable for now.
 - Reordering milestones (drag-and-drop) not implemented; new milestones append.
 - Invalid record URLs show a "Not found" message but return HTTP 200 (streaming limitation).
-- Playwright scripts used for verification are not yet part of the repo's automated suite (Phase 5).
+- CI workflow written but not yet run on GitHub.
+- No error-monitoring service (e.g. Sentry) — deliberately not added, to avoid an extra paid service; errors go to the Vercel logs, and error screens show a reference code to search for.
+- No rate limiting on the chat endpoint beyond sign-in, the monthly budget guard, and the Anthropic Console spend limit (single-user app).
 
-## Next: Phase 5 — Quality and deployment readiness
-Move the browser checks into a repeatable Playwright suite, accessibility pass, security review of policies and server actions, error monitoring, and a deployment guide (Vercel + hosted Supabase) — plus the live-AI check once an API key is available.
+## Next steps
+1. Push to GitHub and check the CI run passes.
+2. Deploy following `docs/DEPLOYMENT.md`.
+3. Add an Anthropic API key and do the live Companion check (tone, tool choices, real costs).
+4. Optional improvements: undo for AI actions, conversation compaction, milestone reordering, scheduled reminders (`docs/PROACTIVE.md`).

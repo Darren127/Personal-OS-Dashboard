@@ -1,8 +1,8 @@
 # Personal OS
 
-An AI-assisted personal command centre: **My Day**, **Tasks**, **Life Goals**, **Projects**, and (from Phase 3) an **AI Companion**, all on one shared database.
+An AI-assisted personal command centre: **My Day**, **Tasks**, **Life Goals**, **Projects**, **Reviews**, and an **AI Companion**, all on one shared database.
 
-Status: **Phase 4 complete** (live-AI verification still pending an API key). See [`docs/PROGRESS.md`](docs/PROGRESS.md), the data model in [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md), and the proactive-features design in [`docs/PROACTIVE.md`](docs/PROACTIVE.md).
+Status: **Phase 5 complete — ready to deploy** (live-AI verification still pending an API key). Deploy with [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). See [`docs/PROGRESS.md`](docs/PROGRESS.md), the data model in [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md), and the proactive-features design in [`docs/PROACTIVE.md`](docs/PROACTIVE.md).
 
 ## Tech stack
 
@@ -12,8 +12,9 @@ Status: **Phase 4 complete** (live-AI verification still pending an API key). Se
 | Styling | Tailwind CSS 4, shadcn/ui-style components on Radix UI |
 | Database & login | Supabase (PostgreSQL, Row Level Security, Auth) |
 | Validation | Zod (every server action validates its input) |
-| Tests | pgTAP (database), Vitest (logic + engine integration) |
-| AI | Anthropic Claude API — Phase 3 |
+| Tests | pgTAP (database), Vitest (logic + engine integration), Playwright + axe-core (browser, accessibility) |
+| AI | Anthropic Claude API (`@anthropic-ai/sdk`) |
+| CI | GitHub Actions (`.github/workflows/ci.yml`) |
 
 ## Running locally
 
@@ -44,6 +45,8 @@ Public sign-up is disabled — `create-user` is the only way to make an account.
 
 ## Using a hosted Supabase project
 
+The full step-by-step (including Vercel) is in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). In short:
+
 1. Create a project at [supabase.com](https://supabase.com).
 2. Apply the schema from this repo (never hand-edit tables in production):
    ```bash
@@ -64,9 +67,21 @@ Public sign-up is disabled — `create-user` is the only way to make an account.
 | `npm run lint` / `npm run typecheck` | Code checks |
 | `npm test` | Unit tests, plus AI-engine integration tests against the local database (skipped if it isn't running) |
 | `npm run db:test` | Database tests: security rules, constraints, triggers (needs `db:start`) |
+| `npm run test:e2e` | Builds the app, then runs the browser tests (needs `db:start`; see below) |
 | `npm run db:start` / `db:stop` | Start/stop local Supabase (data is kept between restarts) |
 | `npm run db:types` | Regenerate TypeScript types after a schema change |
 | `npm run create-user -- <email>` | Create a login |
+
+## Tests
+
+| Suite | Where | What it covers |
+| --- | --- | --- |
+| Database (pgTAP) | `supabase/tests/database/` | Row Level Security between users, constraints, triggers, the append-only AI log |
+| Unit (Vitest) | `tests/unit/` | Dates and timezones, validation, recommendations, pattern detectors |
+| Integration (Vitest) | `tests/integration/` | The AI engine's tool loop and approvals against the real local database, with a scripted stand-in model |
+| Browser (Playwright) | `tests/e2e/` | Sign-in, every module's main journeys, the Companion through the real streaming UI, data isolation between two users, phone-width layout, keyboard use, security headers, no secrets in the browser, and an axe-core WCAG 2.1 AA scan of every page in light and dark mode |
+
+The browser tests create two test logins (`e2e@personal-os.local`, `e2e-other@personal-os.local`) in the **local** database and reset their data before each test; your own account is never touched. The Companion is answered by `tests/e2e/mock-anthropic.mjs`, a test-only fake of the Claude API, so the tests cost nothing and need no key. First time on a new computer: `npx playwright install chromium`.
 
 ## Environment variables
 
@@ -76,7 +91,7 @@ See [`.env.example`](.env.example).
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Server | No — public by design |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Server | No — data is protected by Row Level Security |
-| `SUPABASE_SECRET_KEY` | `create-user` script only | **Yes** — bypasses security rules; never in the app |
+| `SUPABASE_SECRET_KEY` | `create-user` script and local tests only | **Yes** — bypasses security rules; never in the app |
 | `ANTHROPIC_API_KEY` | Server only | **Yes** — pay-as-you-go API billing, not part of Claude Pro |
 | `ANTHROPIC_MODEL` | Server | No — default `claude-opus-5-5` |
 | `ANTHROPIC_EFFORT` | Server | No — `low` / `medium` (default) / `high` / `xhigh` / `max` |
@@ -124,5 +139,8 @@ src/
 supabase/
   migrations/       Reproducible SQL schema
   tests/database/   pgTAP tests
-tests/unit/         Vitest tests
+tests/unit/         Vitest unit tests
+tests/integration/  Vitest tests against the local database
+tests/e2e/          Playwright browser tests
+docs/               Progress log, data model, deployment guide
 ```

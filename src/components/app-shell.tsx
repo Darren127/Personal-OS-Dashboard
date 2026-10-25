@@ -93,6 +93,12 @@ export function AppShell({
 
   return (
     <div className="flex min-h-dvh">
+      <a
+        href="#main"
+        className="sr-only z-50 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
+      >
+        Skip to main content
+      </a>
       <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col gap-6 border-r bg-sidebar p-4 lg:flex">
         <Brand />
         <NavLinks />
@@ -126,7 +132,7 @@ export function AppShell({
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
+        <main id="main" tabIndex={-1} className="mx-auto outline-none w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
           {children}
         </main>
       </div>
