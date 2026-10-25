@@ -18,7 +18,8 @@ export function getSupabaseConfig() {
 export class SupabaseNotConfiguredError extends Error {
   constructor() {
     super(
-      "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY in .env.local.",
+      "Supabase is not configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY " +
+        "(locally in .env.local; on Vercel in Project Settings → Environment Variables, then redeploy).",
     );
   }
 }
